@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+numpy
+scikit-learn
+xgboost
+nltk==3.7
+textstat
+transformers
+onnxruntime
+pymongo[srv]
+python-jose[cryptography]
+python-multipart
+python-docx
+pypdf
+python-pptx

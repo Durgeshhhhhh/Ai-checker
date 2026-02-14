@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Login | AI Detector</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+body {
+  margin: 0;
+  height: 100vh;
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  background: white;
+  width: 380px;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+  text-align: center;
+}
+
+h1 { margin-bottom: 10px; }
+p { color: #555; font-size: 14px; }
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+button:hover { background: #1e40af; }
+
+#error {
+  color: red;
+  margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h1>🔐 Login</h1>
+  <p>Access your AI Detection Dashboard</p>
+
+  <input id="email" type="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+
+  <button id="loginBtn">Login</button>
+  <div id="error"></div>
+</div>
+
+<script src="./config.js"></script>
+<script>
+const API_BASE = window.APP_CONFIG.API_BASE;
+
+if (window.APP_CONFIG.IS_API_PLACEHOLDER) {
+  console.warn("Set your Render backend URL in frontend/config.js before production deploy.");
+}
+
+document.getElementById("loginBtn").onclick = async () => {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const error = document.getElementById("error");
+
+  error.innerText = "";
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      error.innerText = data.detail || "Login failed";
+      return;
+    }
+
+    localStorage.setItem("access_token", data.access_token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+
+    if (data.user.role === "admin") {
+      window.location.href = "admin.html";
+    } else {
+      window.location.href = "index.html";
+    }
+  } catch (err) {
+    error.innerText = "Server not reachable";
+  }
+};
+</script>
+
+</body>
+</html>

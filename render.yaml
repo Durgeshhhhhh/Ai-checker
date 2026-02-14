@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: ai-checker-api
+    runtime: python
+    plan: free
+    # Always download the exact ONNX artifacts configured via env vars.
+    # If these are missing/misconfigured, fail the build instead of silently producing different embeddings.
+    buildCommand: pip install -r requirements.txt && python scripts/fetch_onnx.py && ls -lh models/onnx
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: AUTH_DISABLED
+        value: "false"
+      - key: FREE_TIER_MODE
+        value: "true"
+      - key: BERT_DISABLED
+        value: "false"
+      - key: ONNX_RUNTIME_DOWNLOAD
+        value: "true"
+      - key: ONNX_DATA_REQUIRED
+        value: "false"
+      - key: BERT_ONNX_PATH
+        value: "models/onnx/minilm/model.onnx"
+      - key: BERT_ONNX_URL
+        value: "https://huggingface.co/Xenova/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx"
+      - key: ENABLE_PERPLEXITY
+        value: "false"
+      - key: MODEL_WARMUP
+        value: "false"
+      - key: MAX_TEXT_CHARS
+        value: "30000"
+      - key: MAX_UPLOAD_BYTES
+        value: "2097152"
+
