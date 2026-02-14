@@ -19,11 +19,13 @@ services:
       - key: ONNX_RUNTIME_DOWNLOAD
         value: "true"
       - key: ONNX_DATA_REQUIRED
-        value: "false"
+        value: "true"
       - key: BERT_ONNX_PATH
-        value: "models/onnx/minilm/model.onnx"
+        value: "models/onnx/bert/model.onnx"
       - key: BERT_ONNX_URL
-        value: "https://huggingface.co/Xenova/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx"
+        value: ""
+      - key: BERT_ONNX_DATA_URL
+        value: ""
       - key: ENABLE_PERPLEXITY
         value: "false"
       - key: MODEL_WARMUP

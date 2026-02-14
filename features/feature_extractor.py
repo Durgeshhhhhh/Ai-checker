@@ -24,16 +24,13 @@ BERT_EMBED_DIM = 768
 # so heavyweight initialization here can OOM on small deploy instances.
 BERT_BACKEND = os.getenv("BERT_BACKEND", "onnx").strip().lower()  # "onnx" or "hf"
 BERT_TOKENIZER_NAME = os.getenv("BERT_TOKENIZER_NAME", "bert-base-uncased").strip()
-BERT_ONNX_PATH = os.getenv("BERT_ONNX_PATH", "models/onnx/minilm/model.onnx").strip()
-BERT_ONNX_URL = os.getenv(
-    "BERT_ONNX_URL",
-    "https://huggingface.co/Xenova/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx",
-).strip()
+BERT_ONNX_PATH = os.getenv("BERT_ONNX_PATH", "models/onnx/bert/model.onnx").strip()
+BERT_ONNX_URL = os.getenv("BERT_ONNX_URL", "").strip()
 BERT_ONNX_DATA_URL = os.getenv("BERT_ONNX_DATA_URL", "").strip()
-ONNX_DATA_REQUIRED = os.getenv("ONNX_DATA_REQUIRED", "0").strip().lower() in {"1", "true", "yes", "on"}
+ONNX_DATA_REQUIRED = os.getenv("ONNX_DATA_REQUIRED", "1").strip().lower() in {"1", "true", "yes", "on"}
 ONNX_RUNTIME_DOWNLOAD = os.getenv("ONNX_RUNTIME_DOWNLOAD", "0").strip().lower() in {"1", "true", "yes", "on"}
 FREE_TIER_MODE = os.getenv("FREE_TIER_MODE", "1").strip().lower() in {"1", "true", "yes", "on"}
-BERT_DISABLED = os.getenv("BERT_DISABLED", "0").strip().lower() in {"1", "true", "yes", "on"}
+BERT_DISABLED = os.getenv("BERT_DISABLED", "1" if FREE_TIER_MODE else "0").strip().lower() in {"1", "true", "yes", "on"}
 
 # Perplexity is expensive (GPT-2 weights are large). Default is disabled to prevent OOM.
 ENABLE_PERPLEXITY = os.getenv("ENABLE_PERPLEXITY", "0").strip().lower() in {"1", "true", "yes", "y", "on"}
