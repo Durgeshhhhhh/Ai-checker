@@ -6,12 +6,11 @@
         /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
         /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(host);
 
-    const defaultProdApi = "https://ai-checker-1.onrender.com";
-    const configuredProdApi = window.__API_BASE_OVERRIDE__ || defaultProdApi;
-    const isPlaceholderApi = /YOUR_RENDER_BACKEND_URL/i.test(configuredProdApi);
+    const defaultProdApi = "http://13.53.197.35:8000";
 
     window.APP_CONFIG = {
-        API_BASE: (isLocalHost || isLanIp) ? `http://${host}:8000` : configuredProdApi,
-        IS_API_PLACEHOLDER: !(isLocalHost || isLanIp) && isPlaceholderApi,
+        API_BASE: (isLocalHost || isLanIp)
+            ? `http://${host}:8000`
+            : defaultProdApi,
     };
 })();
