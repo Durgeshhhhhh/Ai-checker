@@ -37,7 +37,7 @@ MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(2 * 1024 * 1024)))
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://ai-checker-alpha.vercel.app",
+        "https://ai-checker-blue.vercel.app",
         "http://127.0.0.1:5500",
         "http://localhost:5500",
         "http://127.0.0.1:5501",
