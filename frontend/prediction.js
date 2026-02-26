@@ -407,78 +407,348 @@ async function copyResultText() {
 }
 window.copyResultText = copyResultText;
 
-function downloadReport() {
+async function downloadReport() {
     if (!lastPredictionData) {
         setUxMessage("Run an analysis first before downloading the report.", "error");
+        return;
+    }
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        setUxMessage("PDF libraries failed to load. Refresh and try again.", "error");
         return;
     }
 
     const now = new Date();
     const datePart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const timePart = `${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
     const baseName = selectedFileBaseName || getSafeUserSlug();
-    const fileName = `${baseName}_ai_highlight_report_${datePart}.html`;
+    const fileName = `${baseName}_ai_highlight_report_${datePart}.pdf`;
+    const reportId = `RQ-${datePart.replace(/-/g, "")}-${timePart}`;
+    const logoSrc = window.REQUIN_LOGO_URL || "./requin-logo.png";
 
-    const highlightedRows = (lastPredictionData.sentences || []).map((s) => {
-        const label = String(s.final_label || "human").toLowerCase() === "ai" ? "AI" : "HUMAN";
-        const klass = label === "AI" ? "ai" : "human";
-        return `<p class="row ${klass}"><strong>[${label}]</strong> ${escapeHtml(s.sentence || "")}</p>`;
-    }).join("");
+    const logoAsset = await new Promise((resolve) => {
+        const probe = new Image();
+        probe.crossOrigin = "anonymous";
+        probe.onload = () => {
+            try {
+                const cv = document.createElement("canvas");
+                cv.width = probe.naturalWidth;
+                cv.height = probe.naturalHeight;
+                const ctx = cv.getContext("2d");
+                if (!ctx) {
+                    resolve(null);
+                    return;
+                }
+                ctx.drawImage(probe, 0, 0);
+                resolve({
+                    dataUrl: cv.toDataURL("image/png"),
+                    width: probe.naturalWidth || 0,
+                    height: probe.naturalHeight || 0
+                });
+            } catch (error) {
+                resolve(null);
+            }
+        };
+        probe.onerror = () => resolve(null);
+        probe.src = logoSrc;
+    });
 
-    const reportLines = [
-        "<!DOCTYPE html>",
-        "<html lang=\"en\">",
-        "<head>",
-        "<meta charset=\"UTF-8\">",
-        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">",
-        "<title>AI Highlight Report</title>",
-        "<style>",
-        "body{font-family:Poppins,Arial,sans-serif;margin:24px;color:#0f172a;line-height:1.65}",
-        "h1{margin:0 0 10px}",
-        ".meta{color:#475569;font-size:13px;margin-bottom:14px}",
-        ".pill{display:inline-block;margin-right:8px;padding:6px 10px;border-radius:999px;color:#fff;font-weight:600}",
-        ".human-pill{background:#059669}",
-        ".ai-pill{background:#dc2626}",
-        ".box{border:1px solid #cbd5e1;border-radius:12px;padding:14px;background:#fff;margin-top:12px}",
-        ".row{margin:0 0 8px;padding:6px 9px;border-radius:8px}",
-        ".ai{background:linear-gradient(135deg,#fee2e2,#fecaca);color:#7f1d1d;border-left:3px solid #ef4444}",
-        ".human{background:linear-gradient(135deg,#dcfce7,#bbf7d0);color:#14532d;border-left:3px solid #10b981}",
-        ".watermark-wrap{position:relative;overflow:hidden;border:1px solid #dbe3ef;border-radius:14px;padding:22px}",
-        ".watermark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0}",
-        ".watermark span{transform:rotate(-28deg);font-size:72px;font-weight:800;letter-spacing:2px;color:rgba(30,58,138,0.08);white-space:nowrap}",
-        ".content{position:relative;z-index:1}",
-        "</style>",
-        "</head>",
-        "<body>",
-        "<section class=\"watermark-wrap\">",
-        "<div class=\"watermark\"><span>AI TEXT DETECTOR</span></div>",
-        "<div class=\"content\">",
-        "<h1>AI Highlight Report</h1>",
-        `<div class=\"meta\">Generated at: ${escapeHtml(now.toLocaleString())}</div>`,
-        "<div>",
-        `<span class=\"pill human-pill\">Human: ${lastPredictionData.overall_human_probability}%</span>`,
-        `<span class=\"pill ai-pill\">AI: ${lastPredictionData.overall_ai_probability}%</span>`,
-        "</div>",
-        "<div class=\"box\">",
-        "<h3 style=\"margin:0 0 8px\">Highlighted Extracted Text</h3>",
-        `${highlightedRows || "(No highlighted output available)"}`,
-        "</div>",
-        "</div>",
-        "</section>",
-        "</body>",
-        "</html>"
-    ];
+    try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
 
-    const reportContent = reportLines.join("\n");
-    const blob = new Blob([reportContent], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = fileName;
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-    URL.revokeObjectURL(url);
-    setUxMessage(`Report downloaded as ${fileName}`, "success");
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 24;
+        const headerHeight = 56;
+        const contentWidth = pageWidth - margin * 2;
+        const contentBottom = pageHeight - margin;
+        const rowGap = 8;
+        const rowPaddingY = 8;
+        const rowPaddingX = 10;
+        const rowLineHeight = 16;
+        const rowFontSize = 11;
+        const rowTextWidth = contentWidth - rowPaddingX * 2 - 26;
+        let y = margin + headerHeight + 18;
+        let pageIndex = 0;
+
+        const drawHeader = () => {
+            pdf.setFillColor(255, 255, 255);
+            pdf.rect(0, 0, pageWidth, headerHeight + 18, "F");
+
+            let textX = margin;
+            if (logoAsset && logoAsset.dataUrl && logoAsset.width && logoAsset.height) {
+                const maxLogoW = 130;
+                const maxLogoH = 34;
+                const ratio = Math.min(maxLogoW / logoAsset.width, maxLogoH / logoAsset.height);
+                const logoW = Math.max(1, Math.round(logoAsset.width * ratio));
+                const logoH = Math.max(1, Math.round(logoAsset.height * ratio));
+                pdf.addImage(logoAsset.dataUrl, "PNG", margin, 14, logoW, logoH, undefined, "FAST");
+                textX = margin + logoW + 10;
+            }
+
+            pdf.setTextColor(15, 23, 42);
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(14);
+            pdf.text("AI Text Detector", textX, 28);
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(11);
+            pdf.text("by Requin Solutions", textX, 43);
+
+            pdf.setDrawColor(226, 232, 240);
+            pdf.line(margin, headerHeight + 6, pageWidth - margin, headerHeight + 6);
+        };
+
+        const drawWatermark = () => {
+            const centerX = pageWidth / 2;
+            const centerY = pageHeight / 2 + 12;
+            pdf.setTextColor(207, 218, 237);
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(46);
+            pdf.text("REQUIN SOLUTIONS", centerX, centerY, { align: "center", angle: -28 });
+            pdf.setTextColor(15, 23, 42);
+        };
+
+        const drawPill = (x, yTop, text, fillRgb) => {
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(12);
+            const w = pdf.getTextWidth(text) + 18;
+            const h = 24;
+            pdf.setFillColor(fillRgb[0], fillRgb[1], fillRgb[2]);
+            pdf.roundedRect(x, yTop, w, h, 12, 12, "F");
+            pdf.setTextColor(255, 255, 255);
+            pdf.text(text, x + 9, yTop + 16);
+            pdf.setTextColor(15, 23, 42);
+            return w;
+        };
+
+        const drawDetailIntro = (continued) => {
+            const gradSteps = 22;
+            const titleY = y;
+            for (let i = 0; i < gradSteps; i++) {
+                const t = i / (gradSteps - 1);
+                const r = Math.round(15 * (1 - t) + 30 * t);
+                const g = Math.round(23 * (1 - t) + 64 * t);
+                const b = Math.round(42 * (1 - t) + 175 * t);
+                pdf.setFillColor(r, g, b);
+                pdf.rect(margin + (contentWidth / gradSteps) * i, titleY, contentWidth / gradSteps + 1, 48, "F");
+            }
+            pdf.setTextColor(248, 250, 252);
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(23);
+            pdf.text(continued ? "Detailed Report (Continued)" : "Detailed AI Report", pageWidth / 2, titleY + 31, { align: "center" });
+            y += 66;
+
+            pdf.setDrawColor(203, 213, 225);
+            pdf.setFillColor(255, 255, 255);
+            pdf.roundedRect(margin, y, contentWidth, 26, 8, 8, "FD");
+            pdf.setTextColor(15, 23, 42);
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(14);
+            pdf.text("Highlighted Extracted Text", margin + 12, y + 17);
+            y += 36;
+        };
+
+        const drawScoreCard = (x, yTop, width, height, title, score, fillRgb) => {
+            pdf.setFillColor(fillRgb[0], fillRgb[1], fillRgb[2]);
+            pdf.roundedRect(x, yTop, width, height, 12, 12, "F");
+            pdf.setTextColor(255, 255, 255);
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(10);
+            pdf.text(title, x + 12, yTop + 16);
+            pdf.setFontSize(23);
+            pdf.text(`${score}%`, x + 12, yTop + 39);
+            pdf.setTextColor(15, 23, 42);
+        };
+
+        const beginPage = () => {
+            if (pageIndex > 0) {
+                pdf.addPage();
+            }
+            drawHeader();
+            y = margin + headerHeight + 18;
+            drawWatermark();
+            pageIndex += 1;
+        };
+
+        const beginCoverPage = () => {
+            const aiScore = Number(lastPredictionData.overall_ai_probability || 0);
+            const humanScore = Number(lastPredictionData.overall_human_probability || 0);
+            const allSentences = (lastPredictionData.sentences || []).map((s) => ({
+                text: String(s.sentence || "").trim(),
+                isAi: String(s.final_label || "human").toLowerCase() === "ai"
+            }));
+            const totalCount = allSentences.length;
+            const aiCount = allSentences.filter((s) => s.isAi).length;
+            const humanCount = totalCount - aiCount;
+            const aiRatio = totalCount ? Math.round((aiCount / totalCount) * 100) : 0;
+            const humanRatio = totalCount ? Math.round((humanCount / totalCount) * 100) : 0;
+            const verdict = aiScore >= humanScore ? "Likely AI-generated content" : "Likely human-written content";
+            const confidence = aiScore >= humanScore ? aiScore : humanScore;
+            const risk = aiScore >= 80 ? "High Risk" : aiScore >= 50 ? "Medium Risk" : "Low Risk";
+            const riskColor = aiScore >= 80 ? [220, 38, 38] : aiScore >= 50 ? [217, 119, 6] : [5, 150, 105];
+            const topHighlights = allSentences
+                .filter((s) => s.isAi && s.text)
+                .slice(0, 4)
+                .map((s) => s.text);
+            const cardGap = 14;
+            const cardW = (contentWidth - cardGap) / 2;
+
+            beginPage();
+            pdf.setTextColor(15, 23, 42);
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(24);
+            pdf.text("AI Writing Detection Report", margin, y + 16);
+            y += 34;
+
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(12);
+            pdf.setTextColor(71, 85, 105);
+            pdf.text("Automated overview with clear risk indicators and summary insights.", margin, y + 12);
+            y += 28;
+
+            pdf.setDrawColor(226, 232, 240);
+            pdf.line(margin, y, pageWidth - margin, y);
+            y += 18;
+
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(11);
+            pdf.setTextColor(51, 65, 85);
+            pdf.text(`Generated at: ${now.toLocaleString()}`, margin, y);
+            pdf.text(`File/User: ${baseName}`, pageWidth - margin, y, { align: "right" });
+            y += 18;
+
+            drawScoreCard(margin, y, cardW, 54, "AI Probability", lastPredictionData.overall_ai_probability, [220, 38, 38]);
+            drawScoreCard(margin + cardW + cardGap, y, cardW, 54, "Human Probability", lastPredictionData.overall_human_probability, [5, 150, 105]);
+            y += 72;
+
+            pdf.setFillColor(241, 245, 249);
+            pdf.roundedRect(margin, y, contentWidth, 92, 12, 12, "F");
+            pdf.setTextColor(15, 23, 42);
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(14);
+            pdf.text("Overall Verdict", margin + 14, y + 24);
+            pdf.setFillColor(riskColor[0], riskColor[1], riskColor[2]);
+            pdf.roundedRect(pageWidth - margin - 110, y + 10, 96, 20, 8, 8, "F");
+            pdf.setTextColor(255, 255, 255);
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(10);
+            pdf.text(risk, pageWidth - margin - 62, y + 24, { align: "center" });
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(20);
+            pdf.setTextColor(15, 23, 42);
+            pdf.text(verdict, margin + 14, y + 52);
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(12);
+            pdf.setTextColor(71, 85, 105);
+            pdf.text(`Confidence: ${confidence}%`, margin + 14, y + 74);
+            y += 106;
+
+            pdf.setFillColor(248, 250, 252);
+            pdf.roundedRect(margin, y, contentWidth, 86, 12, 12, "F");
+            pdf.setTextColor(15, 23, 42);
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(13);
+            pdf.text("Document Overview", margin + 14, y + 22);
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(11);
+            pdf.text(`Total Sentences: ${totalCount}`, margin + 14, y + 42);
+            pdf.text(`AI-Labeled Sentences: ${aiCount}`, margin + 14, y + 60);
+            pdf.text(`Human-Labeled Sentences: ${humanCount}`, margin + 14, y + 78);
+            pdf.text(`AI Ratio: ${aiRatio}%`, margin + contentWidth / 2 + 14, y + 42);
+            pdf.text(`Human Ratio: ${humanRatio}%`, margin + contentWidth / 2 + 14, y + 60);
+            y += 98;
+
+            pdf.setFillColor(248, 250, 252);
+            pdf.roundedRect(margin, y, contentWidth, 118, 12, 12, "F");
+            pdf.setTextColor(15, 23, 42);
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(13);
+            pdf.text("Top AI-Flagged Highlights", margin + 14, y + 22);
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(10.5);
+            const previewLines = topHighlights.length ? topHighlights : ["No AI-flagged highlights found."];
+            let hy = y + 40;
+            for (let i = 0; i < Math.min(previewLines.length, 4); i++) {
+                const wrapped = pdf.splitTextToSize(`- ${previewLines[i]}`, contentWidth - 28);
+                const firstLine = wrapped[0] || "";
+                pdf.text(firstLine, margin + 14, hy);
+                hy += 18;
+            }
+            y += 130;
+
+            pdf.setFillColor(241, 245, 249);
+            pdf.roundedRect(margin, y, contentWidth, 74, 12, 12, "F");
+            pdf.setTextColor(15, 23, 42);
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(12);
+            pdf.text("Report Metadata", margin + 14, y + 20);
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(10.5);
+            pdf.text(`Report ID: ${reportId}`, margin + 14, y + 38);
+            pdf.text(`Generated: ${now.toLocaleString()}`, margin + 14, y + 54);
+            pdf.text(`Source: ${baseName}`, margin + contentWidth / 2 + 14, y + 38);
+            pdf.text("Quick Notes:", margin + contentWidth / 2 + 14, y + 54);
+            pdf.text("- Page 2 onward contains sentence-level detail.", margin + contentWidth / 2 + 14, y + 68);
+        };
+
+        const beginDetailPage = (continued) => {
+            beginPage();
+            drawDetailIntro(continued);
+        };
+
+        const rows = (lastPredictionData.sentences || []).map((s) => ({
+            text: String(s.sentence || ""),
+            isAi: String(s.final_label || "human").toLowerCase() === "ai"
+        }));
+        if (!rows.length) {
+            rows.push({ text: "(No highlighted output available)", isAi: false });
+        }
+
+        beginCoverPage();
+        beginDetailPage(false);
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(rowFontSize);
+            let lines = pdf.splitTextToSize(row.text, rowTextWidth);
+            let rowHeight = lines.length * rowLineHeight + rowPaddingY * 2;
+
+            if (y + rowHeight > contentBottom) {
+                beginDetailPage(true);
+                pdf.setFont("helvetica", "normal");
+                pdf.setFontSize(rowFontSize);
+                lines = pdf.splitTextToSize(row.text, rowTextWidth);
+                rowHeight = lines.length * rowLineHeight + rowPaddingY * 2;
+            }
+
+            if (row.isAi) {
+                pdf.setFillColor(255, 237, 237);
+                pdf.roundedRect(margin, y, contentWidth, rowHeight, 8, 8, "F");
+                pdf.setFillColor(220, 38, 38);
+                pdf.rect(margin, y, 3, rowHeight, "F");
+                pdf.setTextColor(111, 24, 24);
+            } else {
+                pdf.setFillColor(220, 252, 231);
+                pdf.roundedRect(margin, y, contentWidth, rowHeight, 8, 8, "F");
+                pdf.setFillColor(16, 185, 129);
+                pdf.rect(margin, y, 3, rowHeight, "F");
+                pdf.setTextColor(20, 83, 45);
+            }
+
+            const textX = margin + rowPaddingX;
+            let textY = y + rowPaddingY + 10;
+            for (let j = 0; j < lines.length; j++) {
+                pdf.text(lines[j], textX, textY);
+                textY += rowLineHeight;
+            }
+            y += rowHeight + rowGap;
+        }
+
+        pdf.save(fileName);
+        setUxMessage(`Report downloaded as ${fileName}`, "success");
+    } catch (error) {
+        setUxMessage("Unable to generate PDF report. Please try again.", "error");
+    }
 }
 window.downloadReport = downloadReport;
 
@@ -527,6 +797,3 @@ if (fileInputEl) {
 }
 
 loadHistory();
-
-
-

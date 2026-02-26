@@ -4,6 +4,7 @@ import logging
 import os
 import pickle
 from pathlib import Path
+import re
 
 import nltk
 import numpy as np
@@ -31,8 +32,8 @@ app = FastAPI(title="Turnitin-Style AI Detector")
 logger = logging.getLogger("uvicorn.error")
 CHUNK_SENTENCE_SIZE = int(os.getenv("CHUNK_SENTENCE_SIZE", "15"))
 MODEL_WARMUP = os.getenv("MODEL_WARMUP", "0").strip().lower() in {"1", "true", "yes", "on"}
-MAX_TEXT_CHARS = int(os.getenv("MAX_TEXT_CHARS", "30000"))
-MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(2 * 1024 * 1024)))
+MAX_TEXT_CHARS = int(os.getenv("MAX_TEXT_CHARS", "300000"))
+MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(20 * 1024 * 1024)))
 
 app.add_middleware(
     CORSMiddleware,
@@ -93,6 +94,105 @@ def warmup_models():
 
 class TextInput(BaseModel):
     text: str
+
+
+def normalize_extracted_text(text: str) -> str:
+    text = text.replace("\r\n", "\n").replace("\r", "\n").replace("\xa0", " ")
+    # Merge PDF-style hyphenated wraps: "exam-\nple" -> "example"
+    text = re.sub(r"([A-Za-z])-\n([A-Za-z])", r"\1\2", text)
+
+    lines = text.split("\n")
+    cleaned = []
+    blank_run = 0
+
+    for raw in lines:
+        line = re.sub(r"[ \t]+", " ", raw).strip()
+        if not line:
+            blank_run += 1
+            if blank_run <= 1:
+                cleaned.append("")
+            continue
+        blank_run = 0
+        cleaned.append(line)
+
+    return "\n".join(cleaned).strip()
+
+
+def extract_docx_text(content: bytes) -> str:
+    document = Document(BytesIO(content))
+    parts = []
+
+    for p in document.paragraphs:
+        txt = p.text.strip()
+        if not txt:
+            continue
+
+        style_name = (p.style.name or "").lower() if p.style else ""
+        if style_name.startswith("heading"):
+            parts.append(txt.upper())
+            parts.append("")
+            continue
+
+        # Keep simple bullet/numbered intent visible in plain text output.
+        if style_name.startswith("list"):
+            parts.append(f"- {txt}")
+        else:
+            parts.append(txt)
+
+    # Include table content (previously lost).
+    for table in document.tables:
+        parts.append("")
+        for row in table.rows:
+            cells = [re.sub(r"\s+", " ", c.text).strip() for c in row.cells]
+            cells = [c for c in cells if c]
+            if cells:
+                parts.append(" | ".join(cells))
+        parts.append("")
+
+    return "\n".join(parts)
+
+
+def extract_pptx_text(content: bytes) -> str:
+    try:
+        presentation = Presentation(BytesIO(content))
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Unable to read .ppt file. Please convert it to .pptx and retry.",
+        )
+
+    lines = []
+    for slide_idx, slide in enumerate(presentation.slides, start=1):
+        lines.append(f"Slide {slide_idx}")
+        for shape in slide.shapes:
+            if not hasattr(shape, "text_frame") or shape.text_frame is None:
+                continue
+            for para in shape.text_frame.paragraphs:
+                text = "".join(run.text for run in para.runs).strip() if para.runs else (para.text or "").strip()
+                if not text:
+                    continue
+                level = getattr(para, "level", 0) or 0
+                indent = "  " * min(level, 4)
+                bullet = "- " if level >= 0 else ""
+                lines.append(f"{indent}{bullet}{text}")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def extract_pdf_text(content: bytes) -> str:
+    reader = PdfReader(BytesIO(content))
+    pages = []
+    for idx, page in enumerate(reader.pages, start=1):
+        try:
+            page_text = page.extract_text(extraction_mode="layout") or ""
+        except TypeError:
+            page_text = page.extract_text() or ""
+        if page_text.strip():
+            pages.append(page_text.strip())
+        else:
+            pages.append(f"[Page {idx}: no readable text]")
+    return "\n\n".join(pages)
 
 
 def classify_turnitin(ai_percent, human_percent, polish_percent):
@@ -213,33 +313,19 @@ def extract_text_from_upload(filename: str, content: bytes) -> str:
 
     if ext == ".txt":
         try:
-            return content.decode("utf-8")
+            raw = content.decode("utf-8")
         except UnicodeDecodeError:
-            return content.decode("latin-1", errors="ignore")
+            raw = content.decode("latin-1", errors="ignore")
+        return normalize_extracted_text(raw)
 
     if ext == ".pdf":
-        reader = PdfReader(BytesIO(content))
-        return "\n".join((page.extract_text() or "") for page in reader.pages)
+        return normalize_extracted_text(extract_pdf_text(content))
 
     if ext in {".docx", ".word"}:
-        document = Document(BytesIO(content))
-        return "\n".join(p.text for p in document.paragraphs)
+        return normalize_extracted_text(extract_docx_text(content))
 
     if ext in {".ppt", ".pptx"}:
-        try:
-            presentation = Presentation(BytesIO(content))
-        except Exception:
-            raise HTTPException(
-                status_code=400,
-                detail="Unable to read .ppt file. Please convert it to .pptx and retry.",
-            )
-
-        lines = []
-        for slide in presentation.slides:
-            for shape in slide.shapes:
-                if hasattr(shape, "text") and shape.text:
-                    lines.append(shape.text)
-        return "\n".join(lines)
+        return normalize_extracted_text(extract_pptx_text(content))
 
     if ext == ".doc":
         raise HTTPException(
