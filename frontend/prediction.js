@@ -148,7 +148,7 @@ function renderDonut(aiValue, humanValue) {
     const human = Math.max(0, Math.min(100, Number(humanValue) || 0));
     const aiDeg = (ai / 100) * 360;
 
-    donut.style.background = `conic-gradient(#ef4444 0deg ${aiDeg}deg, #10b981 ${aiDeg}deg 360deg)`;
+    donut.style.background = `conic-gradient(#bfdbfe 0deg ${aiDeg}deg, #ffffff ${aiDeg}deg 360deg)`;
     donut.innerHTML = `
         <div class="donut-inner">
             <strong>AI ${ai}%</strong>
@@ -273,11 +273,22 @@ function renderPrediction(data) {
 
     const box = document.getElementById("highlightedText");
     box.innerHTML = "";
-    data.sentences.forEach((s) => {
-        const span = document.createElement("span");
-        span.innerText = s.sentence + " ";
-        span.className = String(s.final_label || "human").toLowerCase();
-        box.appendChild(span);
+    box.style.background = "#ffffff";
+    box.style.borderLeft = "none";
+    (data.sentences || []).forEach((s) => {
+        const sentence = String(s.sentence || "").trim();
+        if (!sentence) return;
+        const isAi = String(s.final_label || "human").toLowerCase() === "ai";
+        const textSpan = document.createElement("span");
+        textSpan.innerText = sentence + " ";
+        textSpan.style.background = isAi ? "linear-gradient(135deg, #e0ecff, #dbeafe)" : "#ffffff";
+        textSpan.style.color = isAi ? "#1e3a8a" : "#0f172a";
+        textSpan.style.padding = "3px 7px";
+        textSpan.style.borderRadius = "7px";
+        textSpan.style.marginRight = "2px";
+        textSpan.style.boxDecorationBreak = "clone";
+        textSpan.style.webkitBoxDecorationBreak = "clone";
+        box.appendChild(textSpan);
     });
 
     document.getElementById("results").style.display = "block";
@@ -551,12 +562,12 @@ async function downloadReport() {
         const drawScoreCard = (x, yTop, width, height, title, score, fillRgb) => {
             pdf.setFillColor(fillRgb[0], fillRgb[1], fillRgb[2]);
             pdf.roundedRect(x, yTop, width, height, 12, 12, "F");
-            pdf.setTextColor(255, 255, 255);
+            pdf.setTextColor(15, 23, 42);
             pdf.setFont("helvetica", "bold");
-            pdf.setFontSize(10);
-            pdf.text(title, x + 12, yTop + 16);
-            pdf.setFontSize(23);
-            pdf.text(`${score}%`, x + 12, yTop + 39);
+            pdf.setFontSize(9);
+            pdf.text(title, x + 10, yTop + 14);
+            pdf.setFontSize(17);
+            pdf.text(`${score}%`, x + 10, yTop + 30);
             pdf.setTextColor(15, 23, 42);
         };
 
@@ -585,7 +596,7 @@ async function downloadReport() {
             const verdict = aiScore >= humanScore ? "Likely AI-generated content" : "Likely human-written content";
             const confidence = aiScore >= humanScore ? aiScore : humanScore;
             const risk = aiScore >= 80 ? "High Risk" : aiScore >= 50 ? "Medium Risk" : "Low Risk";
-            const riskColor = aiScore >= 80 ? [220, 38, 38] : aiScore >= 50 ? [217, 119, 6] : [5, 150, 105];
+            const riskColor = aiScore >= 80 ? [59, 130, 246] : aiScore >= 50 ? [56, 189, 248] : [34, 197, 94];
             const topHighlights = allSentences
                 .filter((s) => s.isAi && s.text)
                 .slice(0, 4)
@@ -617,31 +628,31 @@ async function downloadReport() {
             pdf.text(`File/User: ${baseName}`, pageWidth - margin, y, { align: "right" });
             y += 18;
 
-            drawScoreCard(margin, y, cardW, 54, "AI Probability", lastPredictionData.overall_ai_probability, [220, 38, 38]);
-            drawScoreCard(margin + cardW + cardGap, y, cardW, 54, "Human Probability", lastPredictionData.overall_human_probability, [5, 150, 105]);
-            y += 72;
+            drawScoreCard(margin, y, cardW, 40, "AI Probability", lastPredictionData.overall_ai_probability, [147, 197, 253]);
+            drawScoreCard(margin + cardW + cardGap, y, cardW, 40, "Human Probability", lastPredictionData.overall_human_probability, [255, 255, 255]);
+            y += 58;
 
             pdf.setFillColor(241, 245, 249);
-            pdf.roundedRect(margin, y, contentWidth, 92, 12, 12, "F");
+            pdf.roundedRect(margin, y, contentWidth, 72, 12, 12, "F");
             pdf.setTextColor(15, 23, 42);
             pdf.setFont("helvetica", "bold");
-            pdf.setFontSize(14);
-            pdf.text("Overall Verdict", margin + 14, y + 24);
+            pdf.setFontSize(12);
+            pdf.text("Overall Verdict", margin + 14, y + 19);
             pdf.setFillColor(riskColor[0], riskColor[1], riskColor[2]);
-            pdf.roundedRect(pageWidth - margin - 110, y + 10, 96, 20, 8, 8, "F");
+            pdf.roundedRect(pageWidth - margin - 95, y + 8, 82, 17, 7, 7, "F");
             pdf.setTextColor(255, 255, 255);
             pdf.setFont("helvetica", "bold");
-            pdf.setFontSize(10);
-            pdf.text(risk, pageWidth - margin - 62, y + 24, { align: "center" });
+            pdf.setFontSize(9);
+            pdf.text(risk, pageWidth - margin - 54, y + 20, { align: "center" });
             pdf.setFont("helvetica", "bold");
-            pdf.setFontSize(20);
+            pdf.setFontSize(16);
             pdf.setTextColor(15, 23, 42);
-            pdf.text(verdict, margin + 14, y + 52);
+            pdf.text(verdict, margin + 14, y + 42);
             pdf.setFont("helvetica", "normal");
-            pdf.setFontSize(12);
+            pdf.setFontSize(10.5);
             pdf.setTextColor(71, 85, 105);
-            pdf.text(`Confidence: ${confidence}%`, margin + 14, y + 74);
-            y += 106;
+            pdf.text(`Confidence: ${confidence}%`, margin + 14, y + 60);
+            y += 84;
 
             pdf.setFillColor(248, 250, 252);
             pdf.roundedRect(margin, y, contentWidth, 86, 12, 12, "F");
@@ -696,52 +707,57 @@ async function downloadReport() {
             drawDetailIntro(continued);
         };
 
-        const rows = (lastPredictionData.sentences || []).map((s) => ({
-            text: String(s.sentence || ""),
-            isAi: String(s.final_label || "human").toLowerCase() === "ai"
-        }));
-        if (!rows.length) {
-            rows.push({ text: "(No highlighted output available)", isAi: false });
-        }
-
         beginCoverPage();
         beginDetailPage(false);
-        for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            pdf.setFont("helvetica", "normal");
-            pdf.setFontSize(rowFontSize);
-            let lines = pdf.splitTextToSize(row.text, rowTextWidth);
-            let rowHeight = lines.length * rowLineHeight + rowPaddingY * 2;
 
-            if (y + rowHeight > contentBottom) {
+        const segments = (lastPredictionData.sentences || []).map((s) => ({
+            text: String(s.sentence || "").trim(),
+            isAi: String(s.final_label || "human").toLowerCase() === "ai"
+        })).filter((s) => s.text);
+        if (!segments.length) {
+            segments.push({ text: "(No highlighted output available)", isAi: false });
+        }
+
+        let textY = y + 2;
+        let textX = margin + rowPaddingX;
+        const maxTextX = margin + contentWidth - rowPaddingX;
+        const nextLine = () => {
+            textX = margin + rowPaddingX;
+            textY += rowLineHeight;
+            if (textY > contentBottom) {
                 beginDetailPage(true);
                 pdf.setFont("helvetica", "normal");
                 pdf.setFontSize(rowFontSize);
-                lines = pdf.splitTextToSize(row.text, rowTextWidth);
-                rowHeight = lines.length * rowLineHeight + rowPaddingY * 2;
+                textX = margin + rowPaddingX;
+                textY = y + 2;
             }
+        };
 
-            if (row.isAi) {
-                pdf.setFillColor(255, 237, 237);
-                pdf.roundedRect(margin, y, contentWidth, rowHeight, 8, 8, "F");
-                pdf.setFillColor(220, 38, 38);
-                pdf.rect(margin, y, 3, rowHeight, "F");
-                pdf.setTextColor(111, 24, 24);
-            } else {
-                pdf.setFillColor(220, 252, 231);
-                pdf.roundedRect(margin, y, contentWidth, rowHeight, 8, 8, "F");
-                pdf.setFillColor(16, 185, 129);
-                pdf.rect(margin, y, 3, rowHeight, "F");
-                pdf.setTextColor(20, 83, 45);
-            }
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(rowFontSize);
+        for (let i = 0; i < segments.length; i++) {
+            const seg = segments[i];
+            const words = seg.text.split(/\s+/).filter(Boolean);
+            for (let j = 0; j < words.length; j++) {
+                const hasTrailingSpace = !(i === segments.length - 1 && j === words.length - 1);
+                const token = words[j] + (hasTrailingSpace ? " " : "");
+                const tokenWidth = pdf.getTextWidth(token);
 
-            const textX = margin + rowPaddingX;
-            let textY = y + rowPaddingY + 10;
-            for (let j = 0; j < lines.length; j++) {
-                pdf.text(lines[j], textX, textY);
-                textY += rowLineHeight;
+                if (textX + tokenWidth > maxTextX) {
+                    nextLine();
+                }
+
+                if (seg.isAi) {
+                    pdf.setFillColor(219, 234, 254);
+                    pdf.roundedRect(textX - 1, textY - 10, tokenWidth + 2, 14, 3, 3, "F");
+                    pdf.setTextColor(30, 64, 175);
+                } else {
+                    pdf.setTextColor(30, 41, 59);
+                }
+
+                pdf.text(token, textX, textY);
+                textX += tokenWidth;
             }
-            y += rowHeight + rowGap;
         }
 
         pdf.save(fileName);
