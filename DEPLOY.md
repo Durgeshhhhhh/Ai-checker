@@ -9,20 +9,20 @@ At the time of creating the instance create the security group
 *  443 - TCP - 0.0.0.0/0 - launch-wizard-3 
 *  22 - TCP - 103.59.75.109/32 - launch-wizard-3  
 
-#### step 1 -: connect the instance 
+#### Step 1 -: connect the instance 
 
-#### step 2 -: update the ubuntu and install the dependency 
+#### Step 2 -: update the ubuntu and install the dependency 
 
 
 * sudo apt update && sudo apt upgrade -y
 * sudo apt install python3-pip python3-venv git nginx -y
 
-#### step 3 -:  STEP 3 — Clone the Project from github 
+#### Step 3 -:  Clone the Project from github 
 
 * git clone https://github.com/Durgeshhhhhh/Ai-checker/
 * cd Ai-checker
 
-#### step 4-: create the virtual enviornment 
+#### Step 4-: create the virtual enviornment 
 
 * python3 -m venv venv
 * source venv/bin/activate
@@ -66,7 +66,7 @@ WantedBy=multi-user.target
 
 #### step 8-: sudo nano /etc/nginx/sites-available/Ai-checker 
 
-
+```
 server {
     listen 80;
     server_name YOUR_EC2_PUBLIC_IP;
@@ -77,6 +77,7 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 }
+```
 
 #### step 9-: start the server 
 * sudo systemctl restart Ai-checker
@@ -102,20 +103,25 @@ The above command will build the dist/ folder then that folder we will use for t
 
 
 
- server {
+ ```
+server {
     listen 80;
-    server_name 40.192.99.138;
+    server_name YOUR_EC2_PUBLIC_IP;
+
     root /var/www/aichecker;
     index index.html;
-     location / {
+
+    location / {
         try_files $uri $uri/ /index.html;
     }
+
     location /api/ {
         proxy_pass http://127.0.0.1:8000/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
 }
+```
 
 
  #### step 12 -:   After the Below command the server will start and frontend will be visible 
