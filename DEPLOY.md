@@ -8,8 +8,8 @@ This is a simple step-by-step guide to deploy the Ai-checker project on an AWS E
 
 1. Create an AWS account.
 2. Launch a new EC2 instance:
-   - OS: Ubuntu (22.04 recommended)
-   - Instance type: t2.micro (or higher if needed)
+   - OS: Ubuntu 
+   - Instance type: t3.small(or higher if needed)
    - Create/select a key pair
 
 ### Security Group Settings
@@ -19,7 +19,7 @@ While creating the instance, add these inbound rules:
 - HTTP – TCP – Port 80 – 0.0.0.0/0  
 - HTTPS – TCP – Port 443 – 0.0.0.0/0  
 - Custom TCP – Port 0-65535 – 0.0.0.0/0  
-- SSH – TCP – Port 22 – Your IP only (example: 103.59.75.109/32)
+- SSH – TCP – Port 22 – Your IP only 
 
 ---
 
@@ -44,7 +44,7 @@ sudo apt install python3-pip python3-venv git nginx -y
 
 ---
 
-## 4️ Clone the Project
+## 4️ Clone the Project 
 
 ```bash
 git clone https://github.com/Durgeshhhhhh/Ai-checker/
@@ -231,7 +231,7 @@ sudo systemctl restart nginx
 
 # Done 
 
-Now open your browser and visit:
+To access  visit:
 
 ```
 http://YOUR_EC2_PUBLIC_IP
