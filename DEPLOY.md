@@ -1,10 +1,10 @@
-# 🚀 Deployment Guide (EC2 + Nginx + FastAPI)
+#  Deployment Guide (EC2 + Nginx + FastAPI)
 
-This guide explains how to deploy the **Ai-checker** project on AWS EC2 using Nginx, Gunicorn, and FastAPI.
+This guide explains how to deploy the Ai-checker project on AWS EC2 using Nginx, Gunicorn, and FastAPI.
 
 ---
 
-## 🌐 Step 0: Create AWS Account & EC2 Instance
+##  Step 0: Create AWS Account & EC2 Instance
 
 1. Create an AWS account at https://aws.amazon.com/
 2. Launch an EC2 Instance:
@@ -13,7 +13,7 @@ This guide explains how to deploy the **Ai-checker** project on AWS EC2 using Ng
    - Create / Select Key Pair
    - Configure Security Group (IMPORTANT)
 
-### 🔐 Security Group Rules
+### Security Group Rules
 
 | Type | Protocol | Port Range | Source |
 |------|----------|------------|--------|
@@ -24,7 +24,7 @@ This guide explains how to deploy the **Ai-checker** project on AWS EC2 using Ng
 
 ---
 
-# 🖥 Backend Deployment (FastAPI)
+# Backend Deployment (FastAPI)
 
 ---
 
@@ -124,7 +124,7 @@ sudo systemctl status ai-detector
 
 ---
 
-# 🌍 Configure Nginx (Backend Reverse Proxy)
+#  Configure Nginx (Backend Reverse Proxy)
 
 ---
 
@@ -160,7 +160,7 @@ sudo systemctl restart nginx
 
 ---
 
-# 🎨 Frontend Deployment (Production Build)
+# Frontend Deployment (Production Build)
 
 ---
 
@@ -245,19 +245,7 @@ http://YOUR_EC2_PUBLIC_IP
 
 ---
 
-# 🔥 Production Tips
-
-- Use a domain instead of IP
-- Setup SSL with Certbot:
-```bash
-sudo apt install certbot python3-certbot-nginx -y
-sudo certbot --nginx
-```
-- Use proper environment variables
-- Disable port `0-65535` rule after deployment (for security)
-
----
 
 # 🎯 Deployment Complete!
 
-Your FastAPI + Nginx + EC2 deployment is now production-ready 🚀
+Your FastAPI + Nginx + EC2 deployment is now production-ready 
