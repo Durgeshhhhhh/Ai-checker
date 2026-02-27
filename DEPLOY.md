@@ -1,17 +1,20 @@
 # Deployment Guide (EC2 + Nginx + FastAPI)
 
-create the AWS A/C after that create the instance with the required and avaiable resources 
+Create the AWS A/C after that create the instance with the required and avaiable resources 
 
-### (1) After creating the intances fallow the required command 
+### After creating the intances fallow the required command 
+
+``` 
 At the time of creating the instance create the security group 
 *  80 - TCP - 0.0.0.0/0 - launch-wizard-3 
 *  (0 - 65535)- TCP - 0.0.0.0/0 - launch-wizard-3 
 *  443 - TCP - 0.0.0.0/0 - launch-wizard-3 
 *  22 - TCP - 103.59.75.109/32 - launch-wizard-3  
+```
 
 #### Step 1 -: connect the instance 
 
-#### Step 2 -: update the ubuntu and install the dependency 
+#### Step 2 -: Update the ubuntu and install the dependency 
 
 
 * sudo apt update && sudo apt upgrade -y
