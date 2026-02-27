@@ -96,7 +96,11 @@ The above command will build the dist/ folder then that folder we will use for t
 * sudo chown -R www-data:www-data /var/www/aichecker
 * sudo chmod -R 755 /var/www/aichecker
 * sudo nano /etc/nginx/sites-available/default
+
+  
 ####  paste this code -: 
+
+
 
  server {
     listen 80;
@@ -106,7 +110,6 @@ The above command will build the dist/ folder then that folder we will use for t
      location / {
         try_files $uri $uri/ /index.html;
     }
-
     location /api/ {
         proxy_pass http://127.0.0.1:8000/;
         proxy_set_header Host $host;
