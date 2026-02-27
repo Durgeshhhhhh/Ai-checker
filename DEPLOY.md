@@ -16,35 +16,43 @@ At the time of creating the instance create the security group
 
 #### Step 2 -: Update the ubuntu and install the dependency 
 
-
+```
 * sudo apt update && sudo apt upgrade -y
 * sudo apt install python3-pip python3-venv git nginx -y
+```
 
 #### Step 3 -:  Clone the Project from github 
 
+```
 * git clone https://github.com/Durgeshhhhhh/Ai-checker/
 * cd Ai-checker
+``` 
+
 
 #### Step 4-: create the virtual enviornment 
 
+```
 * python3 -m venv venv
 * source venv/bin/activate
 * pip install -r requirements.txt
 * pip install gunicorn uvicorn
+```
+
 
 #### step 5-: create .env file in the EC2 server
 
+```
 * sudo nano .env 
-
+```
 #### step 6-:  Setup Gunicorn (Production Server)
-
+```
 * gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app --bind 0.0.0.0:8000
-
+```
 #### step 7-: STEP 8 — Create Systemd Service (Auto Start)
-
+```
 * sudo nano /etc/systemd/system/ai-detector.service 
-
-```                                                                        
+```
+                                                                        
 [Unit]
 Description=AI Detector FastAPI App
 After=network.target
@@ -60,11 +68,11 @@ WantedBy=multi-user.target
 ```
 
 #### After creating the file run this command -:
-
+```
 * sudo systemctl daemon-reload
 * sudo systemctl start Ai-checker
 * sudo systemctl enable Ai-checker
-
+```
 #### If want to check the status then run -: 
 * sudo systemctl status ai-detector
  
