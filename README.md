@@ -79,7 +79,28 @@ Default local URL:
 
 ## Frontend Setup
 
-Set API URL in [`frontend/config.js`](/c:/projects/share/frontend/config.js), then open frontend pages via local server (for example Live Server / static host).
+Set API URL in [`frontend/config.js`](/c:/projects/share/frontend/config.js), then install and run frontend tooling:
+
+```bash
+npm install
+npm run dev
+```
+
+Production build:
+
+```bash
+npm run build
+```
+
+- Output directory: `dist/`
+- Source maps: disabled (`sourcemap: false` in `vite.config.js`)
+- Minifier: `terser`
+
+Preview production bundle locally:
+
+```bash
+npm run preview
+```
 
 Main page:
 - [`frontend/prediction.html`](/c:/projects/share/frontend/prediction.html)
