@@ -48,11 +48,11 @@ At the time of creating the instance create the security group
 ```
 * gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app --bind 0.0.0.0:8000
 ```
-#### step 7-: STEP 8 — Create Systemd Service (Auto Start)
+#### Step 7-:  — Create Systemd Service (Auto Start)
 ```
 * sudo nano /etc/systemd/system/ai-detector.service 
 ```
-                                                                        
+```                                                                        
 [Unit]
 Description=AI Detector FastAPI App
 After=network.target
