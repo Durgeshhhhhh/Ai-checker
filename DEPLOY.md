@@ -1,34 +1,33 @@
-#  Deployment Guide (EC2 + Nginx + FastAPI)
+# Deployment Guide (AWS EC2 + FastAPI + Nginx)
 
-This guide explains how to deploy the Ai-checker project on AWS EC2 using Nginx, Gunicorn, and FastAPI.
-
----
-
-##  Step 0: Create AWS Account & EC2 Instance
-
-1. Create an AWS account at https://aws.amazon.com/
-2. Launch an EC2 Instance:
-   - OS: Ubuntu (Recommended 22.04 LTS)
-   - Instance Type: t2.micro (Free tier) or higher based on requirement
-   - Create / Select Key Pair
-   - Configure Security Group (IMPORTANT)
-
-### Security Group Rules
-
-| Type | Protocol | Port Range | Source |
-|------|----------|------------|--------|
-| HTTP | TCP | 80 | 0.0.0.0/0 |
-| Custom TCP | TCP | 0-65535 | 0.0.0.0/0 |
-| HTTPS | TCP | 443 | 0.0.0.0/0 |
-| SSH | TCP | 22 | 103.59.75.109/32 |
+This is a simple step-by-step guide to deploy the Ai-checker project on an AWS EC2 Ubuntu server.
 
 ---
 
-# Backend Deployment (FastAPI)
+## 1️ Create AWS Account & Launch EC2
+
+1. Create an AWS account.
+2. Launch a new EC2 instance:
+   - OS: Ubuntu (22.04 recommended)
+   - Instance type: t2.micro (or higher if needed)
+   - Create/select a key pair
+
+### Security Group Settings
+
+While creating the instance, add these inbound rules:
+
+- HTTP – TCP – Port 80 – 0.0.0.0/0  
+- HTTPS – TCP – Port 443 – 0.0.0.0/0  
+- Custom TCP – Port 0-65535 – 0.0.0.0/0  
+- SSH – TCP – Port 22 – Your IP only (example: 103.59.75.109/32)
 
 ---
 
-## Step 1: Connect to EC2
+# Backend Setup (FastAPI)
+
+---
+
+## 2️ Connect to EC2
 
 ```bash
 ssh -i your-key.pem ubuntu@YOUR_EC2_PUBLIC_IP
@@ -36,7 +35,7 @@ ssh -i your-key.pem ubuntu@YOUR_EC2_PUBLIC_IP
 
 ---
 
-## Step 2: Update & Install Dependencies
+## 3️ Update Server & Install Required Packages
 
 ```bash
 sudo apt update && sudo apt upgrade -y
@@ -45,7 +44,7 @@ sudo apt install python3-pip python3-venv git nginx -y
 
 ---
 
-## Step 3: Clone the Project
+## 4️ Clone the Project
 
 ```bash
 git clone https://github.com/Durgeshhhhhh/Ai-checker/
@@ -54,7 +53,7 @@ cd Ai-checker
 
 ---
 
-## Step 4: Create Virtual Environment
+## 5️ Create Virtual Environment
 
 ```bash
 python3 -m venv venv
@@ -65,33 +64,33 @@ pip install gunicorn uvicorn
 
 ---
 
-## Step 5: Create `.env` File
+## 6️ Create .env File
 
 ```bash
 sudo nano .env
 ```
 
-Add your environment variables and save.
+Add your environment variables and save the file.
 
 ---
 
-## Step 6: Run Gunicorn (Test Manually)
+## 7️ Test the App with Gunicorn
 
 ```bash
 gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app --bind 0.0.0.0:8000
 ```
 
-If working properly, stop it using `CTRL + C`.
+If it works, press `CTRL + C` to stop it.
 
 ---
 
-## Step 7: Create Systemd Service (Auto Start)
+## 8️ Create Systemd Service (Auto Start)
 
 ```bash
 sudo nano /etc/systemd/system/ai-detector.service
 ```
 
-Paste:
+Paste this:
 
 ```
 [Unit]
@@ -108,7 +107,7 @@ Restart=always
 WantedBy=multi-user.target
 ```
 
-### Reload & Start Service
+Then run:
 
 ```bash
 sudo systemctl daemon-reload
@@ -116,7 +115,7 @@ sudo systemctl start ai-detector
 sudo systemctl enable ai-detector
 ```
 
-### Check Status
+To check status:
 
 ```bash
 sudo systemctl status ai-detector
@@ -124,17 +123,17 @@ sudo systemctl status ai-detector
 
 ---
 
-#  Configure Nginx (Backend Reverse Proxy)
+# Nginx Configuration
 
 ---
 
-## Step 8: Create Nginx Config
+## 9️ Configure Nginx
 
 ```bash
 sudo nano /etc/nginx/sites-available/Ai-checker
 ```
 
-Paste:
+Paste this:
 
 ```
 server {
@@ -150,7 +149,7 @@ server {
 }
 ```
 
-Enable configuration:
+Enable and restart Nginx:
 
 ```bash
 sudo ln -s /etc/nginx/sites-available/Ai-checker /etc/nginx/sites-enabled/
@@ -160,29 +159,29 @@ sudo systemctl restart nginx
 
 ---
 
-# Frontend Deployment (Production Build)
+# Frontend Setup (Production)
 
 ---
 
-## Step 9: Build Frontend
+##  Build Frontend
 
-Install Node.js & npm (if not installed):
+Install npm if needed:
 
 ```bash
 sudo apt install npm -y
 ```
 
-Build project:
+Then build:
 
 ```bash
 npm run build
 ```
 
-This creates a `dist/` folder for production.
+This will create a `dist/` folder.
 
 ---
 
-## Step 10: Move `dist` to Nginx Directory
+## 1️1️ Move dist Folder to Nginx
 
 ```bash
 sudo rm -rf /var/www/aichecker
@@ -194,7 +193,7 @@ sudo chmod -R 755 /var/www/aichecker
 
 ---
 
-## Step 11: Update Nginx for Frontend + Backend
+## 1️2️ Update Default Nginx File
 
 ```bash
 sudo nano /etc/nginx/sites-available/default
@@ -222,9 +221,7 @@ server {
 }
 ```
 
----
-
-## Step 12: Restart Nginx
+Restart Nginx:
 
 ```bash
 sudo systemctl restart nginx
@@ -232,20 +229,15 @@ sudo systemctl restart nginx
 
 ---
 
-# ✅ Final Result
+# Done 
 
-- Backend running via Gunicorn (Port 8000)
-- Nginx serving frontend
-- API connected via `/api/`
-- Project accessible via:
+Now open your browser and visit:
 
 ```
 http://YOUR_EC2_PUBLIC_IP
 ```
 
+Your backend and frontend should both be working.
+
 ---
 
-
-# 🎯 Deployment Complete!
-
-Your FastAPI + Nginx + EC2 deployment is now production-ready 
