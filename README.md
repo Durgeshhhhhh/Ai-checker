@@ -189,12 +189,3 @@ The report export in `prediction.js` uses `jsPDF`:
 - CORS issues:
   - update allowed origins in `app.py`.
 
-## Deployment
-
-See:
-- [`DEPLOY.md`](/c:/projects/share/DEPLOY.md)
-- [`render.yaml`](/c:/projects/share/render.yaml)
-
-## License
-
-Internal/Proprietary unless specified otherwise by project owner.
