@@ -149,7 +149,7 @@ server {
 }
 ```
 
-Enable and restart Nginx:
+Enable and restart Nginx:-
 
 ```bash
 sudo ln -s /etc/nginx/sites-available/Ai-checker /etc/nginx/sites-enabled/
