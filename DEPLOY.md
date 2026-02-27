@@ -4,10 +4,10 @@ create the AWS A/C after that create the instance with the required and avaiable
 
 ### (1) After creating the intances fallow the required command 
 At the time of creating the instance create the security group 
-* 1) 80 - TCP - 0.0.0.0/0 - launch-wizard-3 
-* 2) (0 - 65535)- TCP - 0.0.0.0/0 - launch-wizard-3 
-* 3) 443 - TCP - 0.0.0.0/0 - launch-wizard-3 
-* 4) 22 - TCP - 103.59.75.109/32 - launch-wizard-3  
+*  80 - TCP - 0.0.0.0/0 - launch-wizard-3 
+*  (0 - 65535)- TCP - 0.0.0.0/0 - launch-wizard-3 
+*  443 - TCP - 0.0.0.0/0 - launch-wizard-3 
+*  22 - TCP - 103.59.75.109/32 - launch-wizard-3  
 
 #### step 1 -: connect the instance 
 
@@ -54,22 +54,23 @@ Restart=always
 [Install]
 WantedBy=multi-user.target
 
-#### after creating the file run this command -:
+#### After creating the file run this command -:
+
 * sudo systemctl daemon-reload
 * sudo systemctl start Ai-checker
 * sudo systemctl enable Ai-checker
 
 #### If want to check the status then run -: 
-sudo systemctl status ai-detector
+* sudo systemctl status ai-detector
  
 
 #### step 8-: sudo nano /etc/nginx/sites-available/Ai-checker 
 
+
 server {
     listen 80;
     server_name YOUR_EC2_PUBLIC_IP;
-
-    location / {
+     location / {
         proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -78,11 +79,11 @@ server {
 }
 
 #### step 9-: start the server 
-sudo systemctl restart Ai-checker
+* sudo systemctl restart Ai-checker
 
 #### step 10 -: If u want to use frontend then -:
-##### 1)Instal npm
-##### 2) npm build 
+* Install npm
+* npm build 
 
 The above command will build the dist/ folder then that folder we will use for the production because it contain only plain Html codde 
 
