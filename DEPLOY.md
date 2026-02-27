@@ -79,3 +79,43 @@ server {
 
 #### step 9-: start the server 
 sudo systemctl restart Ai-checker
+
+#### step 10 -: If u want to use frontend then -:
+##### 1)Instal npm
+##### 2) npm build 
+
+The above command will build the dist/ folder then that folder we will use for the production because it contain only plain Html codde 
+
+#### step 11 -: After building the Dist use it with nginx so instead of using the frontend folder it will use dist for the production 
+
+##### run this command one by one -: 
+sudo rm -rf /var/www/aichecker
+sudo mkdir -p /var/www/aichecker
+sudo cp -r ~/Ai-checker/dist/* /var/www/aichecker/
+sudo chown -R www-data:www-data /var/www/aichecker
+ sudo chmod -R 755 /var/www/aichecker
+ sudo nano /etc/nginx/sites-available/default
+ paste this code -: 
+
+ server {
+    listen 80;
+    server_name 40.192.99.138;
+
+    root /var/www/aichecker;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+
+
+ #### step -12  sudo systemctl restart nginx 
+ After the above command the server will start and frontend will be visible 
+ 
