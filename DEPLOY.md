@@ -74,8 +74,9 @@ WantedBy=multi-user.target
 * sudo systemctl enable Ai-checker
 ```
 #### If want to check the status then run -: 
+```
 * sudo systemctl status ai-detector
- 
+ ```
 
 #### step 8-: sudo nano /etc/nginx/sites-available/Ai-checker 
 
@@ -92,25 +93,28 @@ server {
 }
 ```
 
-#### Step 9-: start the server 
+#### Step 9-: start the server
+```
 * sudo systemctl restart Ai-checker
-
+```
 #### Step 10 -: If u want to use frontend then -:
+```
 * Install npm
 * npm build 
 
 The above command will build the dist/ folder then that folder we will use for the production because it contain only plain Html codde 
-
+```
 #### Step 11 -: After building the Dist use it with nginx so instead of using the frontend folder it will use dist for the production 
 
 ##### run this command one by one -: 
+```
 * sudo rm -rf /var/www/aichecker
 * sudo mkdir -p /var/www/aichecker
 * sudo cp -r ~/Ai-checker/dist/* /var/www/aichecker/
 * sudo chown -R www-data:www-data /var/www/aichecker
 * sudo chmod -R 755 /var/www/aichecker
 * sudo nano /etc/nginx/sites-available/default
-
+```
   
 ####  Paste this code -: 
 
@@ -138,5 +142,6 @@ server {
 
 
  #### Step 12 -:   After the Below command the server will start and frontend will be visible 
+ ```
 * sudo systemctl restart nginx 
- 
+ ```
