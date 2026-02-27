@@ -40,7 +40,8 @@ At the time of creating the instance create the security group
 #### step 7-: STEP 8 — Create Systemd Service (Auto Start)
 
 * sudo nano /etc/systemd/system/ai-detector.service 
-                                                                       
+
+```                                                                        
 [Unit]
 Description=AI Detector FastAPI App
 After=network.target
@@ -53,6 +54,7 @@ Restart=always
 
 [Install]
 WantedBy=multi-user.target
+```
 
 #### After creating the file run this command -:
 
@@ -79,16 +81,16 @@ server {
 }
 ```
 
-#### step 9-: start the server 
+#### Step 9-: start the server 
 * sudo systemctl restart Ai-checker
 
-#### step 10 -: If u want to use frontend then -:
+#### Step 10 -: If u want to use frontend then -:
 * Install npm
 * npm build 
 
 The above command will build the dist/ folder then that folder we will use for the production because it contain only plain Html codde 
 
-#### step 11 -: After building the Dist use it with nginx so instead of using the frontend folder it will use dist for the production 
+#### Step 11 -: After building the Dist use it with nginx so instead of using the frontend folder it will use dist for the production 
 
 ##### run this command one by one -: 
 * sudo rm -rf /var/www/aichecker
@@ -99,7 +101,7 @@ The above command will build the dist/ folder then that folder we will use for t
 * sudo nano /etc/nginx/sites-available/default
 
   
-####  paste this code -: 
+####  Paste this code -: 
 
 
 
@@ -124,6 +126,6 @@ server {
 ```
 
 
- #### step 12 -:   After the Below command the server will start and frontend will be visible 
+ #### Step 12 -:   After the Below command the server will start and frontend will be visible 
 * sudo systemctl restart nginx 
  
