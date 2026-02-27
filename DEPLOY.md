@@ -1,243 +1,69 @@
-# Deployment Guide (AWS EC2 + FastAPI + Nginx)
+# Deploy Guide (Render + Vercel)
 
-This is a simple step-by-step guide to deploy the Ai-checker project on an AWS EC2 Ubuntu server.
+This backend computes features using BERT embeddings. To avoid out-of-memory errors on small instances, the backend is configured to run BERT via ONNX Runtime by default and to not load GPT-2 perplexity unless explicitly enabled.
 
----
+## Render (backend)
 
-## 1️ Create AWS Account & Launch EC2
+`render.yaml` is included and runs:
 
-1. Create an AWS account.
-2. Launch a new EC2 instance:
-   - OS: Ubuntu 
-   - Instance type: t3.small(or higher if needed)
-   - Create/select a key pair
+- `python scripts/fetch_onnx.py`
+- `pip install -r requirements.txt`
 
-### Security Group Settings
+### 1) Host the 2 ONNX files somewhere
 
-While creating the instance, add these inbound rules:
+You must host these files with direct download links:
 
-- HTTP – TCP – Port 80 – 0.0.0.0/0  
-- HTTPS – TCP – Port 443 – 0.0.0.0/0  
-- Custom TCP – Port 0-65535 – 0.0.0.0/0  
-- SSH – TCP – Port 22 – Your IP only 
+- `model.onnx`
+- `model.onnx.data`
 
----
+### 2) Set Render environment variables
 
-# Backend Setup (FastAPI)
+In Render Dashboard -> Service -> Environment, set:
 
----
+- `BERT_ONNX_URL` = direct URL to `model.onnx`
+- `BERT_ONNX_DATA_URL` = direct URL to `model.onnx.data`
 
-## 2️ Connect to EC2
+Optional (defaults shown):
 
-```bash
-ssh -i your-key.pem ubuntu@YOUR_EC2_PUBLIC_IP
-```
+- `BERT_ONNX_PATH=models/onnx/bert/model.onnx`
+- `BERT_BACKEND=onnx`
+- `ENABLE_PERPLEXITY=0` (recommended to avoid loading GPT-2)
 
----
+The build step downloads files to:
 
-## 3️ Update Server & Install Required Packages
+- `models/onnx/bert/model.onnx`
+- `models/onnx/bert/model.onnx.data`
 
-```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install python3-pip python3-venv git nginx -y
-```
+### 3) Required backend variables
 
----
+Also set:
 
-## 4️ Clone the Project 
+- `MONGO_URI`
+- `MONGO_DB_NAME`
+- `JWT_SECRET_KEY`
+- `JWT_EXPIRE_MINUTES`
+- `DEFAULT_ADMIN_EMAIL`
+- `DEFAULT_ADMIN_PASSWORD`
 
-```bash
-git clone https://github.com/Durgeshhhhhh/Ai-checker/
-cd Ai-checker
-```
+Health endpoint:
 
----
+- `GET /`
 
-## 5️ Create Virtual Environment
+## Vercel (frontend)
 
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-pip install gunicorn uvicorn
-```
+Set project root directory to `frontend`.
 
----
+After backend deploy, update:
 
-## 6️ Create .env File
+- `frontend/config.js`
+  - Replace `https://YOUR_RENDER_BACKEND_URL.onrender.com` with your Render API URL.
 
-```bash
-sudo nano .env
-```
+Then redeploy frontend.
 
-Add your environment variables and save the file.
+## Production Safety Checks
 
----
-
-## 7️ Test the App with Gunicorn
-
-```bash
-gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app --bind 0.0.0.0:8000
-```
-
-If it works, press `CTRL + C` to stop it.
-
----
-
-## 8️ Create Systemd Service (Auto Start)
-
-```bash
-sudo nano /etc/systemd/system/ai-detector.service
-```
-
-Paste this:
-
-```
-[Unit]
-Description=AI Detector FastAPI App
-After=network.target
-
-[Service]
-User=ubuntu
-WorkingDirectory=/home/ubuntu/Ai-checker
-ExecStart=/home/ubuntu/Ai-checker/venv/bin/gunicorn -w 1 -k uvicorn.workers.UvicornWorker app:app --bind 127.0.0.1:8000
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Then run:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl start ai-detector
-sudo systemctl enable ai-detector
-```
-
-To check status:
-
-```bash
-sudo systemctl status ai-detector
-```
-
----
-
-# Nginx Configuration
-
----
-
-## 9️ Configure Nginx
-
-```bash
-sudo nano /etc/nginx/sites-available/Ai-checker
-```
-
-Paste this:
-
-```
-server {
-    listen 80;
-    server_name YOUR_EC2_PUBLIC_IP;
-
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-}
-```
-
-Enable and restart Nginx:-
-
-```bash
-sudo ln -s /etc/nginx/sites-available/Ai-checker /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-```
-
----
-
-# Frontend Setup (Production)
-
----
-
-##  Build Frontend
-
-Install npm if needed:
-
-```bash
-sudo apt install npm -y
-```
-
-Then build:
-
-```bash
-npm run build
-```
-
-This will create a `dist/` folder.
-
----
-
-## 1️1️ Move dist Folder to Nginx
-
-```bash
-sudo rm -rf /var/www/aichecker
-sudo mkdir -p /var/www/aichecker
-sudo cp -r ~/Ai-checker/dist/* /var/www/aichecker/
-sudo chown -R www-data:www-data /var/www/aichecker
-sudo chmod -R 755 /var/www/aichecker
-```
-
----
-
-## 1️2️ Update Default Nginx File
-
-```bash
-sudo nano /etc/nginx/sites-available/default
-```
-
-Replace with:
-
-```
-server {
-    listen 80;
-    server_name YOUR_EC2_PUBLIC_IP;
-
-    root /var/www/aichecker;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /api/ {
-        proxy_pass http://127.0.0.1:8000/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
-
-Restart Nginx:
-
-```bash
-sudo systemctl restart nginx
-```
-
----
-
-# Done 
-
-To access  visit:
-
-```
-http://YOUR_EC2_PUBLIC_IP
-```
-
-Your backend and frontend should both be working.
-
----
+- Confirm backend has `AUTH_DISABLED=false`.
+- Login with admin credentials.
+- Create a user from admin panel.
+- Run a text scan and verify response time and history update.
 
