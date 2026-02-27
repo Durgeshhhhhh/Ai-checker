@@ -1,69 +1,82 @@
-# Deploy Guide (Render + Vercel)
+# Deployment Guide (EC2 + Nginx + FastAPI)
 
-This backend computes features using BERT embeddings. To avoid out-of-memory errors on small instances, the backend is configured to run BERT via ONNX Runtime by default and to not load GPT-2 perplexity unless explicitly enabled.
+create the AWS A/C after that create the instance with the required and avaiable resources 
 
-## Render (backend)
+### (1) After creating the intances fallow the required command 
+At the time of creating the instance create the security group 
+1) 80 - TCP - 0.0.0.0/0 - launch-wizard-3 
+2) (0 - 65535)- TCP - 0.0.0.0/0 - launch-wizard-3 
+3) 443 - TCP - 0.0.0.0/0 - launch-wizard-3 
+4) 22 - TCP - 103.59.75.109/32 - launch-wizard-3  
 
-`render.yaml` is included and runs:
+#### step 1 -: connect the instance 
 
-- `python scripts/fetch_onnx.py`
-- `pip install -r requirements.txt`
+#### step 2 -: update the ubuntu and install the dependency 
 
-### 1) Host the 2 ONNX files somewhere
 
-You must host these files with direct download links:
+sudo apt update && sudo apt upgrade -y
+sudo apt install python3-pip python3-venv git nginx -y
 
-- `model.onnx`
-- `model.onnx.data`
+#### step 3 -:  STEP 3 — Clone the Project from github 
 
-### 2) Set Render environment variables
+git clone https://github.com/Durgeshhhhhh/Ai-checker/
+cd Ai-checker
 
-In Render Dashboard -> Service -> Environment, set:
+#### step 4-: create the virtual enviornment 
 
-- `BERT_ONNX_URL` = direct URL to `model.onnx`
-- `BERT_ONNX_DATA_URL` = direct URL to `model.onnx.data`
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+pip install gunicorn uvicorn
 
-Optional (defaults shown):
+#### step 5-: create .env file in the EC2 server
 
-- `BERT_ONNX_PATH=models/onnx/bert/model.onnx`
-- `BERT_BACKEND=onnx`
-- `ENABLE_PERPLEXITY=0` (recommended to avoid loading GPT-2)
+sudo nano .env 
 
-The build step downloads files to:
+#### step 6-:  Setup Gunicorn (Production Server)
 
-- `models/onnx/bert/model.onnx`
-- `models/onnx/bert/model.onnx.data`
+gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app --bind 0.0.0.0:8000
 
-### 3) Required backend variables
+#### step 7-: STEP 8 — Create Systemd Service (Auto Start)
 
-Also set:
+sudo nano /etc/systemd/system/ai-detector.service 
+                                                                       
+[Unit]
+Description=AI Detector FastAPI App
+After=network.target
 
-- `MONGO_URI`
-- `MONGO_DB_NAME`
-- `JWT_SECRET_KEY`
-- `JWT_EXPIRE_MINUTES`
-- `DEFAULT_ADMIN_EMAIL`
-- `DEFAULT_ADMIN_PASSWORD`
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/Ai-checker
+ExecStart=/home/ubuntu/Ai-checker/venv/bin/gunicorn -w 1 -k uvicorn.workers.UvicornWorker app:app --bind 127.0.0.1:8000
+Restart=always
 
-Health endpoint:
+[Install]
+WantedBy=multi-user.target
 
-- `GET /`
+#### after creating the file run this command -:
+sudo systemctl daemon-reload
+sudo systemctl start Ai-checker
+sudo systemctl enable Ai-checker
 
-## Vercel (frontend)
+#### If want to check the status then run -: 
+sudo systemctl status ai-detector
+ 
 
-Set project root directory to `frontend`.
+#### step 8-: sudo nano /etc/nginx/sites-available/Ai-checker 
 
-After backend deploy, update:
+server {
+    listen 80;
+    server_name YOUR_EC2_PUBLIC_IP;
 
-- `frontend/config.js`
-  - Replace `https://YOUR_RENDER_BACKEND_URL.onrender.com` with your Render API URL.
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
 
-Then redeploy frontend.
-
-## Production Safety Checks
-
-- Confirm backend has `AUTH_DISABLED=false`.
-- Login with admin credentials.
-- Create a user from admin panel.
-- Run a text scan and verify response time and history update.
+#### step 9-: start the server 
+sudo systemctl restart Ai-checker
 
