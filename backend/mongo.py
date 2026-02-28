@@ -55,6 +55,11 @@ def ensure_default_admin() -> None:
 
     existing = users_collection.find_one({"email": admin_email.lower()})
     if existing:
+        if existing.get("role") != "super_admin":
+            users_collection.update_one(
+                {"_id": existing["_id"]},
+                {"$set": {"role": "super_admin"}},
+            )
         return
 
     users_collection.insert_one(
@@ -62,7 +67,7 @@ def ensure_default_admin() -> None:
             "email": admin_email.lower(),
             "password_hash": hash_password(admin_password),
             "tokens": 999999,
-            "role": "admin",
+            "role": "super_admin",
             "created_at": datetime.utcnow(),
         }
     )

@@ -28,7 +28,7 @@ if (userInfo && user && user.email) {
 }
 
 const adminNavLink = document.getElementById("adminNavLink");
-if (adminNavLink && user && user.role === "admin") {
+if (adminNavLink && user && (user.role === "admin" || user.role === "super_admin")) {
     adminNavLink.style.display = "inline-flex";
 }
 

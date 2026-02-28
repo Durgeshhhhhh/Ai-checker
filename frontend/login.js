@@ -68,7 +68,7 @@ async function performLogin() {
     localStorage.setItem("access_token", data.access_token);
     localStorage.setItem("user", JSON.stringify(data.user));
 
-    if (data.user.role === "admin") {
+    if (data.user.role === "admin" || data.user.role === "super_admin") {
       window.location.href = "admin.html";
     } else {
       window.location.href = "prediction.html";

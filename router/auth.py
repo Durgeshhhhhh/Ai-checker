@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 from backend.crypto import verify_password
 from backend.mongo import users_collection
-from backend.security import create_access_token
+from backend.security import create_access_token, normalize_role
 
 auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -24,7 +24,8 @@ def login(data: LoginRequest):
     if not verify_password(data.password, user.get("password_hash", "")):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    token = create_access_token(str(user["_id"]), user.get("role", "user"))
+    normalized_role = normalize_role(user.get("role", "user"))
+    token = create_access_token(str(user["_id"]), normalized_role)
 
     return {
         "access_token": token,
@@ -32,7 +33,7 @@ def login(data: LoginRequest):
         "user": {
             "id": str(user["_id"]),
             "email": user.get("email"),
-            "role": user.get("role", "user"),
+            "role": normalized_role,
             "tokens": user.get("tokens", 0),
         },
     }

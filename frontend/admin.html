@@ -35,20 +35,30 @@
   <h1>Admin Dashboard</h1>
 
   <div class="container">
+    <div class="card" id="allocationSummaryCard" style="display:none;">
+      <h2><span class="emoji">&#128200;</span>Allocation Summary</h2>
+      <div id="allocationSummary"></div>
+    </div>
+
     <div class="card">
-      <h2><span class="emoji">👤</span>Create User</h2>
+      <h2 id="createTitle"><span class="emoji">&#128100;</span>Create User</h2>
 
       <div class="input-container">
+        <select id="accountRole" aria-label="Account Role">
+          <option value="user">User</option>
+        </select>
         <input id="email" placeholder="User Email">
         <input id="password" placeholder="Password">
         <input id="tokens" type="number" placeholder="Tokens">
+        <input id="maxUsers" type="number" placeholder="Max Users Admin Can Create">
       </div>
+      <p id="createHint"></p>
 
       <button class="create" id="createUserBtn">Create User</button>
     </div>
 
     <div class="card">
-      <h2><span class="emoji">📊</span>User List</h2>
+      <h2 id="listTitle"><span class="emoji">&#128202;</span>User List</h2>
 
       <table id="userTable">
         <tr>
@@ -96,5 +106,3 @@
 <script type="module" src="./admin.js"></script>
 </body>
 </html>
-
-

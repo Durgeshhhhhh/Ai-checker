@@ -8,7 +8,8 @@
 
     const defaultProdApi = "https://ai-checker-1.onrender.com";
     const configuredProdApi = window.__API_BASE_OVERRIDE__ || defaultProdApi;
-    const useLocalApi = window.__USE_LOCAL_API__ === true;
+    // Default to local API for localhost/LAN unless explicitly forced to false.
+    const useLocalApi = window.__USE_LOCAL_API__ !== false;
     const isPlaceholderApi = /YOUR_RENDER_BACKEND_URL/i.test(configuredProdApi);
 
     window.APP_CONFIG = {

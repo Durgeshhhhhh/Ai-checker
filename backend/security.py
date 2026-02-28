@@ -26,7 +26,17 @@ def decode_access_token(token: str) -> Optional[dict]:
         return None
 
 
+def normalize_role(role: Optional[str]) -> str:
+    if role is None:
+        return "user"
+    return str(role).strip().lower().replace("-", "_").replace(" ", "_")
+
+
 def _get_fallback_user():
+    super_admin_user = users_collection.find_one({"role": "super_admin"})
+    if super_admin_user:
+        return super_admin_user
+
     admin_user = users_collection.find_one({"role": "admin"})
     if admin_user:
         return admin_user
@@ -62,13 +72,22 @@ def get_current_user(
     if not user:
         raise HTTPException(status_code=401, detail="User Not Found")
 
+    user["role"] = normalize_role(user.get("role"))
     return user
+
+
+def is_admin_like(user: Optional[dict]) -> bool:
+    return bool(user) and normalize_role(user.get("role")) in {"admin", "super_admin"}
+
+
+def is_super_admin(user: Optional[dict]) -> bool:
+    return bool(user) and normalize_role(user.get("role")) == "super_admin"
 
 
 def require_admin_user(current_user=Depends(get_current_user)):
     if AUTH_DISABLED:
         return current_user
 
-    if not current_user or current_user.get("role") != "admin":
+    if not is_admin_like(current_user):
         raise HTTPException(status_code=403, detail="Admin access required")
     return current_user
