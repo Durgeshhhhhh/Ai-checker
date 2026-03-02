@@ -24,8 +24,24 @@ const createHint = document.getElementById("createHint");
 const createUserBtn = document.getElementById("createUserBtn");
 const accountRole = document.getElementById("accountRole");
 const maxUsersInput = document.getElementById("maxUsers");
+const emailInput = document.getElementById("email");
 const allocationSummaryCard = document.getElementById("allocationSummaryCard");
 const allocationSummary = document.getElementById("allocationSummary");
+const adminRequestsCard = document.getElementById("adminRequestsCard");
+const adminRequestsTable = document.getElementById("adminRequestsTable");
+const profileModal = document.getElementById("profileModal");
+const openProfileBtn = document.getElementById("openProfileBtn");
+const closeProfileBtn = document.getElementById("closeProfileBtn");
+const profileContent = document.getElementById("profileContent");
+const editUserModal = document.getElementById("editUserModal");
+const closeEditUserBtn = document.getElementById("closeEditUserBtn");
+const editUserMeta = document.getElementById("editUserMeta");
+const editUserEmail = document.getElementById("editUserEmail");
+const editUserPassword = document.getElementById("editUserPassword");
+const editUserOrg = document.getElementById("editUserOrg");
+const editUserHint = document.getElementById("editUserHint");
+const saveEditUserBtn = document.getElementById("saveEditUserBtn");
+let activeEditUserId = null;
 
 if (adminInfo && user && user.email) {
   adminInfo.innerText = user.email;
@@ -72,6 +88,40 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function summaryBox(label, value) {
+  return `
+    <div class="summary-item">
+      <div class="label">${escapeHtml(label)}</div>
+      <div class="value">${escapeHtml(String(value))}</div>
+    </div>
+  `;
+}
+
+function openProfileModal() {
+  if (!profileModal) return;
+  profileModal.classList.add("show");
+  profileModal.setAttribute("aria-hidden", "false");
+}
+
+function closeProfileModal() {
+  if (!profileModal) return;
+  profileModal.classList.remove("show");
+  profileModal.setAttribute("aria-hidden", "true");
+}
+
+function openEditUserModal() {
+  if (!editUserModal) return;
+  editUserModal.classList.add("show");
+  editUserModal.setAttribute("aria-hidden", "false");
+}
+
+function closeEditUserModal() {
+  if (!editUserModal) return;
+  editUserModal.classList.remove("show");
+  editUserModal.setAttribute("aria-hidden", "true");
+  activeEditUserId = null;
+}
+
 function setupRoleUi() {
   if (!createTitle || !listTitle || !createHint || !createUserBtn || !accountRole) {
     return;
@@ -89,6 +139,9 @@ function setupRoleUi() {
     listTitle.innerHTML = "<span class='emoji'>&#128202;</span>Admin List";
     createHint.innerText = "Super admin can create admins and set user limit per admin.";
     createUserBtn.innerText = "Create Admin";
+    if (emailInput) {
+      emailInput.placeholder = "Organization Email ID";
+    }
     return;
   }
 
@@ -102,6 +155,9 @@ function setupRoleUi() {
   listTitle.innerHTML = "<span class='emoji'>&#128202;</span>User List";
   createHint.innerText = "Admin can create users up to the assigned limit.";
   createUserBtn.innerText = "Create User";
+  if (emailInput) {
+    emailInput.placeholder = "User Email";
+  }
 }
 
 function renderTableHeader(table) {
@@ -131,15 +187,6 @@ function renderTableHeader(table) {
   `;
 }
 
-function summaryBox(label, value) {
-  return `
-    <div class="summary-item">
-      <div class="label">${escapeHtml(label)}</div>
-      <div class="value">${escapeHtml(String(value))}</div>
-    </div>
-  `;
-}
-
 async function loadAllocationSummary() {
   if (!allocationSummaryCard || !allocationSummary) {
     return;
@@ -163,6 +210,14 @@ async function loadAllocationSummary() {
 
   if (data.role !== "admin") {
     allocationSummary.innerHTML = "<p>Super admin dashboard. Create admins and manage token/user limits.</p>";
+    if (profileContent) {
+      profileContent.innerHTML = [
+        summaryBox("Email", data.email || ""),
+        summaryBox("Organization Name", data.organization_name || "-"),
+        summaryBox("Role", data.role || ""),
+        summaryBox("Current Tokens", data.tokens || 0)
+      ].join("");
+    }
     return;
   }
 
@@ -172,8 +227,20 @@ async function loadAllocationSummary() {
     summaryBox("Used Tokens", data.used_tokens || 0),
     summaryBox("User Limit", data.max_users_allowed || 0),
     summaryBox("Users Created", data.current_users_count || 0),
-    summaryBox("Remaining User Slots", data.remaining_user_slots || 0),
+    summaryBox("Remaining User Slots", data.remaining_user_slots || 0)
   ].join("");
+
+  if (profileContent) {
+    profileContent.innerHTML = [
+      summaryBox("Email", data.email || ""),
+      summaryBox("Organization Name", data.organization_name || "-"),
+      summaryBox("Role", data.role || ""),
+      summaryBox("Total Tokens Allocated", data.total_tokens_allocated || 0),
+      summaryBox("Remaining Tokens", data.remaining_tokens || 0),
+      summaryBox("User Limit", data.max_users_allowed || 0),
+      summaryBox("Users Created", data.current_users_count || 0)
+    ].join("");
+  }
 }
 
 async function createAccount() {
@@ -228,6 +295,52 @@ async function createAccount() {
 
 document.getElementById("createUserBtn").onclick = createAccount;
 
+async function loadAdminRequests() {
+  if (!isSuperAdmin || !adminRequestsCard || !adminRequestsTable) {
+    return;
+  }
+
+  adminRequestsCard.style.display = "block";
+
+  const res = await fetch(`${API_BASE}/admin/admin-requests`, {
+    headers: { "Authorization": "Bearer " + token }
+  });
+  const requests = await res.json();
+
+  if (!res.ok) {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td colspan="6">${escapeHtml(requests.detail || "Unable to load requests")}</td>`;
+    adminRequestsTable.appendChild(row);
+    return;
+  }
+
+  if (!requests.length) {
+    const row = document.createElement("tr");
+    row.innerHTML = "<td colspan='6'>No pending requests.</td>";
+    adminRequestsTable.appendChild(row);
+    return;
+  }
+
+  requests.forEach((r) => {
+    const row = document.createElement("tr");
+    const time = r.requested_at ? new Date(r.requested_at).toLocaleString() : "N/A";
+    row.innerHTML = `
+      <td>${escapeHtml(r.organization_name || "-")}</td>
+      <td>${escapeHtml(r.email || "")}</td>
+      <td>${r.requested_tokens || 0}</td>
+      <td>${r.requested_max_users || 0}</td>
+      <td>${escapeHtml(time)}</td>
+      <td>
+        <button class="approve" data-request-id="${r.id}">Approve</button>
+        <button class="reject" data-request-id="${r.id}">Reject</button>
+      </td>
+    `;
+    adminRequestsTable.appendChild(row);
+  });
+
+  attachRequestActions();
+}
+
 async function loadUsers() {
   const table = document.getElementById("userTable");
   renderTableHeader(table);
@@ -263,7 +376,7 @@ async function loadUsers() {
 
     if (isSuperAdmin) {
       row.innerHTML = `
-        <td>${escapeHtml(u.email || "")}</td>
+        <td><button class="email-link" data-id="${u.id}" title="Edit account">${escapeHtml(u.email || "")}</button></td>
         <td>${u.tokens || 0}</td>
         <td>${u.max_users_allowed || 0}</td>
         <td><button class="recharge" data-id="${u.id}" data-tokens="${u.tokens || 0}">Recharge</button></td>
@@ -273,7 +386,7 @@ async function loadUsers() {
       `;
     } else {
       row.innerHTML = `
-        <td>${escapeHtml(u.email || "")}</td>
+        <td><button class="email-link" data-id="${u.id}" title="Edit account">${escapeHtml(u.email || "")}</button></td>
         <td>${u.tokens || 0}</td>
         <td><button class="recharge" data-id="${u.id}" data-tokens="${u.tokens || 0}">Recharge</button></td>
         <td><button class="delete" data-id="${u.id}">Delete</button></td>
@@ -288,15 +401,19 @@ async function loadUsers() {
 }
 
 function attachActions() {
+  document.querySelectorAll(".email-link").forEach((btn) => {
+    btn.onclick = async () => {
+      const uid = btn.dataset.id;
+      if (!uid) return;
+      await loadUserDetailsForEdit(uid);
+    };
+  });
+
   document.querySelectorAll(".recharge").forEach((btn) => {
     btn.onclick = async () => {
       const uid = btn.dataset.id;
       const currentTokens = parseInt(btn.dataset.tokens || "0", 10);
-      const amount = prompt(
-        isSuperAdmin
-          ? "Enter new token amount:"
-          : `Enter tokens to add (current: ${currentTokens}):`
-      );
+      const amount = prompt(`Enter tokens to add (current: ${currentTokens}):`);
       if (amount === null) return;
       const tokenCount = parseInt(amount, 10);
       if (Number.isNaN(tokenCount) || tokenCount < 0) {
@@ -327,11 +444,11 @@ function attachActions() {
   document.querySelectorAll(".limit").forEach((btn) => {
     btn.onclick = async () => {
       const uid = btn.dataset.id;
-      const amount = prompt("Enter max users this admin can create:");
+      const amount = prompt("Enter user-limit count to add for this admin:");
       if (amount === null) return;
       const maxUsers = parseInt(amount, 10);
       if (Number.isNaN(maxUsers) || maxUsers < 0) {
-        alert("Invalid max users value");
+        alert("Invalid limit value");
         return;
       }
 
@@ -418,6 +535,149 @@ function attachActions() {
   });
 }
 
+async function loadUserDetailsForEdit(userId) {
+  if (!API_BASE) {
+    alert("Backend URL is not configured. Set it in frontend/config.js");
+    return;
+  }
+
+  const res = await fetch(`${API_BASE}/admin/users/${userId}/details`, {
+    headers: { "Authorization": "Bearer " + token }
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    alert(data.detail || "Unable to load account details");
+    return;
+  }
+
+  activeEditUserId = userId;
+  editUserEmail.value = data.email || "";
+  editUserPassword.value = data.password_plain || "";
+  if (editUserOrg) {
+    editUserOrg.value = data.organization_name || "";
+    editUserOrg.style.display = data.role === "admin" ? "inline-block" : "none";
+  }
+
+  if (editUserMeta) {
+    const metaItems = [
+      summaryBox("Role", data.role || ""),
+      summaryBox("Current Tokens", data.tokens || 0),
+    ];
+    if (data.role === "admin") {
+      metaItems.push(summaryBox("Current Max Users", data.max_users_allowed || 0));
+    }
+    editUserMeta.innerHTML = metaItems.join("");
+  }
+  if (editUserHint) {
+    editUserHint.innerText = "Edit email/password here. Use Recharge and Set Limit buttons for allocation changes.";
+  }
+
+  openEditUserModal();
+}
+
+async function saveUserDetails() {
+  if (!activeEditUserId) return;
+
+  const payload = {
+    email: (editUserEmail.value || "").trim(),
+    password: (editUserPassword.value || "").trim(),
+    organization_name: editUserOrg && editUserOrg.style.display !== "none"
+      ? (editUserOrg.value || "").trim()
+      : undefined,
+  };
+
+  const res = await fetch(`${API_BASE}/admin/users/${activeEditUserId}/details`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + token,
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    alert(data.detail || "Unable to update account");
+    return;
+  }
+
+  alert("Account details updated");
+  location.reload();
+}
+
+function attachRequestActions() {
+  document.querySelectorAll(".approve").forEach((btn) => {
+    btn.onclick = async () => {
+      const reqId = btn.dataset.requestId;
+      const res = await fetch(`${API_BASE}/admin/admin-requests/${reqId}/approve`, {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + token }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.detail || "Failed to approve request");
+        return;
+      }
+      if (data.email_sent) {
+        alert("Request approved and email sent.");
+      } else {
+        alert("Request approved, but email was not sent. Check SMTP settings.");
+      }
+      location.reload();
+    };
+  });
+
+  document.querySelectorAll(".reject").forEach((btn) => {
+    btn.onclick = async () => {
+      const reqId = btn.dataset.requestId;
+      if (!confirm("Reject this request?")) return;
+      const reason = prompt("Reason (optional):") || "";
+      const res = await fetch(`${API_BASE}/admin/admin-requests/${reqId}/reject`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({ reason })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.detail || "Failed to reject request");
+        return;
+      }
+      alert("Request rejected");
+      location.reload();
+    };
+  });
+}
+
+if (openProfileBtn) {
+  openProfileBtn.addEventListener("click", openProfileModal);
+}
+if (closeProfileBtn) {
+  closeProfileBtn.addEventListener("click", closeProfileModal);
+}
+if (profileModal) {
+  profileModal.addEventListener("click", (event) => {
+    if (event.target === profileModal) {
+      closeProfileModal();
+    }
+  });
+}
+if (closeEditUserBtn) {
+  closeEditUserBtn.addEventListener("click", closeEditUserModal);
+}
+if (editUserModal) {
+  editUserModal.addEventListener("click", (event) => {
+    if (event.target === editUserModal) {
+      closeEditUserModal();
+    }
+  });
+}
+if (saveEditUserBtn) {
+  saveEditUserBtn.addEventListener("click", saveUserDetails);
+}
+
 setupRoleUi();
 loadAllocationSummary();
+loadAdminRequests();
 loadUsers();

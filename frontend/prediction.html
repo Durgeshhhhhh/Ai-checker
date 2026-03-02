@@ -26,6 +26,7 @@
             <a href="prediction.html">AI Detection</a>
             <a href="scan-history.html">Detailed History</a>
             <a href="admin.html" id="adminNavLink" style="display: none;">Admin Dashboard</a>
+            <button class="btn nav-profile" id="openProfileBtn" type="button">Profile</button>
             <button class="btn btn-login nav-logout" id="logoutBtn">Logout</button>
         </div>
     </nav>
@@ -76,6 +77,14 @@
     </div>
 </main>
 
+<div class="profile-modal" id="profileModal" aria-hidden="true">
+    <div class="profile-card">
+        <button class="close-profile" id="closeProfileBtn" type="button" aria-label="Close profile">&times;</button>
+        <h2>My Profile</h2>
+        <div id="profileContent"></div>
+    </div>
+</div>
+
 <footer class="site-footer">
     <div class="footer-container">
         <div class="footer-brand">
@@ -109,4 +118,3 @@
 <script type="module" src="./prediction.js"></script>
 </body>
 </html>
-

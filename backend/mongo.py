@@ -39,11 +39,14 @@ db = client[MONGO_DB_NAME]
 
 users_collection = db["users"]
 scan_logs_collection = db["scan_logs"]
+admin_requests_collection = db["admin_requests"]
 
 
 def ensure_collections_and_indexes() -> None:
     users_collection.create_index([("email", ASCENDING)], unique=True)
     scan_logs_collection.create_index([("uid", ASCENDING), ("timestamp", DESCENDING)])
+    admin_requests_collection.create_index([("email", ASCENDING), ("status", ASCENDING)])
+    admin_requests_collection.create_index([("status", ASCENDING), ("requested_at", DESCENDING)])
 
 
 def ensure_default_admin() -> None:

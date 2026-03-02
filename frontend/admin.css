@@ -50,6 +50,13 @@ body::before {
   padding: 0.65rem 1.1rem;
 }
 
+.nav-profile {
+  padding: 0.65rem 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: #e6f2ff;
+}
+
 .page-main {
   position: relative;
   z-index: 10;
@@ -234,12 +241,39 @@ button:hover {
   background: linear-gradient(135deg, #10b981, #059669);
 }
 
+.limit {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+}
+
 .delete {
   background: linear-gradient(135deg, #ef4444, #dc2626);
 }
 
 .view {
   background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.approve {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.reject {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.email-link {
+  border: none;
+  background: transparent;
+  color: #1d4ed8;
+  padding: 0;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.email-link:hover {
+  color: #1e3a8a;
+  transform: none;
 }
 
 .emoji {
@@ -273,6 +307,68 @@ button:hover {
 
 .site-footer {
   margin-top: 70px;
+}
+
+.profile-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 6, 23, 0.7);
+  z-index: 3000;
+  padding: 16px;
+}
+
+.profile-modal.show {
+  display: flex;
+}
+
+.profile-card {
+  width: min(520px, 100%);
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #dbeafe;
+  padding: 22px;
+  box-shadow: 0 24px 60px rgba(2, 8, 30, 0.4);
+  position: relative;
+}
+
+.close-profile {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: none;
+  background: transparent;
+  color: #334155;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#profileContent {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+#editUserMeta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.edit-fields {
+  margin-top: 12px;
+}
+
+#editUserHint {
+  margin: 0 0 12px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 @media (max-width: 900px) {

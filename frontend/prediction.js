@@ -22,6 +22,10 @@ const header = document.getElementById("siteHeader");
 const menuBtn = document.getElementById("menuBtn");
 const navLinks = document.getElementById("navLinks");
 const userInfo = document.getElementById("userInfo");
+const profileModal = document.getElementById("profileModal");
+const openProfileBtn = document.getElementById("openProfileBtn");
+const closeProfileBtn = document.getElementById("closeProfileBtn");
+const profileContent = document.getElementById("profileContent");
 
 if (userInfo && user && user.email) {
     userInfo.innerText = user.email;
@@ -86,6 +90,64 @@ function escapeHtml(value) {
         .replace(/>/g, "&gt;")
         .replace(/\"/g, "&quot;")
         .replace(/'/g, "&#39;");
+}
+
+function summaryRow(label, value) {
+    return `
+        <div class="profile-row">
+            <span class="profile-label">${escapeHtml(label)}</span>
+            <span class="profile-value">${escapeHtml(String(value))}</span>
+        </div>
+    `;
+}
+
+function openProfileModal() {
+    if (!profileModal) return;
+    profileModal.classList.add("show");
+    profileModal.setAttribute("aria-hidden", "false");
+}
+
+function closeProfileModal() {
+    if (!profileModal) return;
+    profileModal.classList.remove("show");
+    profileModal.setAttribute("aria-hidden", "true");
+}
+
+async function loadMyProfile() {
+    if (!profileContent) return;
+
+    profileContent.innerHTML = "<p>Loading profile...</p>";
+
+    if (!API_BASE) {
+        profileContent.innerHTML = "<p>Backend URL is not configured.</p>";
+        return;
+    }
+
+    try {
+        const response = await fetch(API_BASE + "/my-profile", {
+            headers: { Authorization: "Bearer " + token }
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            profileContent.innerHTML = `<p>${escapeHtml(data.detail || "Unable to load profile")}</p>`;
+            return;
+        }
+
+        const creator = data.created_by;
+        const createdByText = creator && creator.email
+            ? `${creator.email} (${creator.role || "user"})`
+            : "N/A";
+
+        profileContent.innerHTML = [
+            summaryRow("Email", data.email || ""),
+            summaryRow("Role", data.role || ""),
+            summaryRow("Tokens", data.tokens || 0),
+            summaryRow("Organization Name", data.organization_name || "-"),
+            summaryRow("Created By", createdByText),
+        ].join("");
+    } catch (error) {
+        profileContent.innerHTML = "<p>Unable to load profile.</p>";
+    }
 }
 
 function getSafeUserSlug() {
@@ -786,6 +848,22 @@ if (logoutBtn) logoutBtn.addEventListener("click", () => {
     logout();
     closeMenu();
 });
+if (openProfileBtn) {
+    openProfileBtn.addEventListener("click", async () => {
+        openProfileModal();
+        await loadMyProfile();
+    });
+}
+if (closeProfileBtn) {
+    closeProfileBtn.addEventListener("click", closeProfileModal);
+}
+if (profileModal) {
+    profileModal.addEventListener("click", (event) => {
+        if (event.target === profileModal) {
+            closeProfileModal();
+        }
+    });
+}
 if (fileInputEl) {
     fileInputEl.addEventListener("change", async () => {
         const file = fileInputEl.files && fileInputEl.files[0];

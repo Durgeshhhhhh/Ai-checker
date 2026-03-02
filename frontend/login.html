@@ -58,10 +58,50 @@
             <input id="password" type="password" placeholder="Enter your password" autocomplete="current-password">
 
             <button id="loginBtn" type="button">Login</button>
+            <button id="openRegisterBtn" type="button" class="register-btn">Register</button>
             <div id="error" aria-live="polite"></div>
         </article>
     </section>
 </main>
+
+<div class="request-modal" id="requestModal" aria-hidden="true">
+    <div class="request-modal-card">
+        <button id="closeRequestModal" type="button" class="close-modal-btn" aria-label="Close register form">&times;</button>
+        <p class="request-badge">Organization Registration</p>
+        <h2>Request Admin Access</h2>
+        <p>Submit your organization details. Super admin approval is required before login.</p>
+
+        <div class="request-form-grid">
+            <div class="request-field request-field-full">
+                <label for="reqOrgName">Organization Name</label>
+                <input id="reqOrgName" type="text" placeholder="Your Company Pvt Ltd" required>
+            </div>
+
+            <div class="request-field request-field-full">
+                <label for="reqEmail">Organization Email ID</label>
+                <input id="reqEmail" type="email" placeholder="org@example.com" autocomplete="email" required>
+            </div>
+
+            <div class="request-field">
+                <label for="reqPassword">Password</label>
+                <input id="reqPassword" type="password" placeholder="Create password" autocomplete="new-password" required>
+            </div>
+
+            <div class="request-field">
+                <label for="reqTokens">Requested Tokens</label>
+                <input id="reqTokens" type="number" placeholder="e.g. 500" min="0" required>
+            </div>
+
+            <div class="request-field request-field-full">
+                <label for="reqMaxUsers">Requested User Limit</label>
+                <input id="reqMaxUsers" type="number" placeholder="e.g. 10" min="0" required>
+            </div>
+        </div>
+
+        <button id="requestAdminBtn" type="button">Submit Request</button>
+        <div id="requestMsg" aria-live="polite"></div>
+    </div>
+</div>
 
 <footer class="site-footer">
     <div class="footer-container">
@@ -94,5 +134,4 @@
 <script type="module" src="./login.js"></script>
 </body>
 </html>
-
 

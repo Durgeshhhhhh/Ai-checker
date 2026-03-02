@@ -49,6 +49,19 @@ body::before {
     padding: 0.65rem 1.1rem;
 }
 
+.nav-profile {
+    padding: 0.65rem 1.1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+    color: #e6f2ff;
+}
+
+.nav-profile:hover {
+    transform: translateY(-1px);
+    border-color: rgba(125, 211, 252, 0.8);
+}
+
 .page-main {
     position: relative;
     z-index: 5;
@@ -430,6 +443,78 @@ textarea::placeholder {
     margin-top: 70px;
 }
 
+.profile-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.72);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 16px;
+}
+
+.profile-modal.show {
+    display: flex;
+}
+
+.profile-card {
+    width: min(520px, 100%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 25px 60px rgba(2, 8, 23, 0.35);
+    padding: 22px;
+    position: relative;
+}
+
+.profile-card h2 {
+    margin: 0 0 14px;
+    color: #0f172a;
+}
+
+.close-profile {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.close-profile:hover {
+    color: #0f172a;
+}
+
+#profileContent {
+    display: grid;
+    gap: 10px;
+}
+
+.profile-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #f8fafc;
+}
+
+.profile-label {
+    color: #334155;
+    font-weight: 600;
+}
+
+.profile-value {
+    color: #0f172a;
+    font-weight: 500;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
 @media (max-width: 900px) {
     .nav-user {
         max-width: none;
@@ -440,6 +525,15 @@ textarea::placeholder {
     .nav-auth-links > button,
     .nav-auth-links > span {
         width: 100%;
+    }
+
+    .profile-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .profile-value {
+        text-align: left;
     }
 }
 

@@ -26,6 +26,7 @@
       <a href="admin.html">Admin Dashboard</a>
       <a href="prediction.html">Predict</a>
       <a href="scan-history.html">Detailed History</a>
+      <button class="btn nav-profile" id="openProfileBtn" type="button">Profile</button>
       <button class="btn btn-login nav-logout" onclick="logout(); closeMenu();">Logout</button>
     </div>
   </nav>
@@ -38,6 +39,20 @@
     <div class="card" id="allocationSummaryCard" style="display:none;">
       <h2><span class="emoji">&#128200;</span>Allocation Summary</h2>
       <div id="allocationSummary"></div>
+    </div>
+
+    <div class="card" id="adminRequestsCard" style="display:none;">
+      <h2><span class="emoji">&#128221;</span>Pending Admin Requests</h2>
+      <table id="adminRequestsTable">
+        <tr>
+          <th>Organization</th>
+          <th>Email</th>
+          <th>Req Tokens</th>
+          <th>Req User Limit</th>
+          <th>Requested At</th>
+          <th>Actions</th>
+        </tr>
+      </table>
     </div>
 
     <div class="card">
@@ -75,6 +90,29 @@
   </div>
 </main>
 
+<div class="profile-modal" id="profileModal" aria-hidden="true">
+  <div class="profile-card">
+    <button class="close-profile" id="closeProfileBtn" type="button" aria-label="Close profile">&times;</button>
+    <h2><span class="emoji">&#128100;</span>My Profile</h2>
+    <div id="profileContent"></div>
+  </div>
+</div>
+
+<div class="profile-modal" id="editUserModal" aria-hidden="true">
+  <div class="profile-card">
+    <button class="close-profile" id="closeEditUserBtn" type="button" aria-label="Close editor">&times;</button>
+    <h2><span class="emoji">&#9998;</span>Edit Account</h2>
+    <div id="editUserMeta"></div>
+    <div class="input-container edit-fields">
+      <input id="editUserEmail" type="email" placeholder="Email">
+      <input id="editUserPassword" type="text" placeholder="Password">
+      <input id="editUserOrg" type="text" placeholder="Organization Name">
+    </div>
+    <p id="editUserHint"></p>
+    <button class="create" id="saveEditUserBtn" type="button">Save Changes</button>
+  </div>
+</div>
+
 <footer class="site-footer">
   <div class="footer-container">
     <div class="footer-brand">
@@ -106,3 +144,4 @@
 <script type="module" src="./admin.js"></script>
 </body>
 </html>
+

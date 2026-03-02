@@ -1,4 +1,4 @@
-﻿* {
+* {
   box-sizing: border-box;
   font-family: 'Poppins', sans-serif;
 }
@@ -152,6 +152,45 @@ body::before {
   transition: all 0.22s ease;
 }
 
+#openRegisterBtn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.32);
+  color: #dbeafe;
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.22s ease;
+}
+
+#openRegisterBtn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.8);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.3);
+}
+
+#requestAdminBtn {
+  width: 100%;
+  margin-top: 20px;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.22s ease;
+}
+
+#requestAdminBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(2, 132, 199, 0.35);
+}
+
 #loginBtn:hover {
   transform: translateY(-2px);
   box-shadow: 0 14px 28px rgba(22, 163, 74, 0.35);
@@ -163,6 +202,115 @@ body::before {
   color: #fecaca;
   font-size: 0.92rem;
   font-weight: 500;
+}
+
+#requestMsg {
+  min-height: 22px;
+  margin-top: 12px;
+  color: #bfdbfe;
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.request-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.72);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 16px;
+}
+
+.request-modal.show {
+  display: flex;
+}
+
+.request-modal-card {
+  width: min(600px, 100%);
+  max-height: 92vh;
+  overflow-y: auto;
+  border: 1px solid rgba(56, 189, 248, 0.34);
+  border-radius: 22px;
+  background:
+    linear-gradient(165deg, rgba(15, 23, 42, 0.97), rgba(10, 18, 40, 0.98));
+  backdrop-filter: blur(10px);
+  box-shadow: 0 28px 70px rgba(2, 8, 30, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  padding: 26px;
+  position: relative;
+}
+
+.request-modal-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  pointer-events: none;
+  background:
+    radial-gradient(420px 180px at 8% -4%, rgba(56, 189, 248, 0.18), transparent 60%),
+    radial-gradient(360px 200px at 95% 0%, rgba(34, 197, 94, 0.14), transparent 62%);
+}
+
+.request-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 8px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.12);
+  color: #bbf7d0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 1;
+}
+
+.request-modal-card h2,
+.request-modal-card p,
+.request-modal-card label,
+.request-modal-card input,
+#requestAdminBtn,
+#requestMsg {
+  position: relative;
+  z-index: 1;
+}
+
+.request-modal-card label::after {
+  content: " *";
+  color: #fca5a5;
+  font-weight: 700;
+}
+
+.request-modal-card input {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(30, 41, 59, 0.62);
+}
+
+.request-modal-card input:focus {
+  border-color: rgba(56, 189, 248, 0.95);
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.2), 0 10px 24px rgba(2, 132, 199, 0.25);
+  background: rgba(51, 65, 85, 0.72);
+}
+.close-modal-btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  border: none;
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.close-modal-btn:hover {
+  color: #ffffff;
 }
 
 .site-footer {
@@ -191,5 +339,85 @@ body::before {
 
   .login-info h1 {
     font-size: 1.7rem;
+  }
+}
+
+
+.request-modal-card {
+  width: min(680px, 100%);
+  padding: 30px 28px;
+}
+
+.request-modal-card h2 {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.1;
+  color: #f8fbff;
+}
+
+.request-modal-card > p {
+  margin: 10px 0 18px;
+  color: #cfdbef;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.request-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.request-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.request-field-full {
+  grid-column: 1 / -1;
+}
+
+.request-modal-card .request-field label {
+  display: block;
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: #e2ecfb;
+}
+
+.request-modal-card .request-field input {
+  width: 100%;
+  display: block;
+  padding: 12px 13px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(30, 41, 59, 0.62);
+  color: #ffffff;
+}
+
+.request-modal-card .request-field input::placeholder {
+  color: rgba(226, 236, 251, 0.6);
+}
+
+.request-modal-card .request-field input:focus {
+  border-color: rgba(56, 189, 248, 0.95);
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.2), 0 10px 24px rgba(2, 132, 199, 0.25);
+  background: rgba(51, 65, 85, 0.72);
+}
+
+#requestAdminBtn {
+  margin-top: 18px;
+}
+
+@media (max-width: 640px) {
+  .request-modal-card {
+    padding: 24px 18px;
+  }
+
+  .request-form-grid {
+    grid-template-columns: 1fr;
+    gap: 11px;
   }
 }

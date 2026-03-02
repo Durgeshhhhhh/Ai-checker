@@ -6,6 +6,7 @@ import pickle
 from pathlib import Path
 import re
 
+from bson import ObjectId
 import nltk
 import numpy as np
 from docx import Document
@@ -23,7 +24,7 @@ from backend.mongo import (
     scan_logs_collection,
     users_collection,
 )
-from backend.security import get_current_user
+from backend.security import get_current_user, normalize_role
 from features.feature_extractor import build_features_with_chunk_context, warmup_inference_stack
 from router.admin import admin_router
 from router.auth import auth_router
@@ -406,3 +407,30 @@ def get_my_history(current_user=Depends(get_current_user)):
         }
         for log in logs
     ]
+
+
+@app.get("/my-profile")
+def get_my_profile(current_user=Depends(get_current_user)):
+    creator_info = None
+    created_by_raw = current_user.get("created_by")
+    if created_by_raw:
+        try:
+            creator_doc = users_collection.find_one({"_id": ObjectId(str(created_by_raw))})
+        except Exception:
+            creator_doc = None
+
+        if creator_doc:
+            creator_info = {
+                "id": str(creator_doc.get("_id")),
+                "email": creator_doc.get("email", ""),
+                "role": normalize_role(creator_doc.get("role", "user")),
+            }
+
+    return {
+        "id": str(current_user.get("_id")),
+        "email": current_user.get("email", ""),
+        "role": normalize_role(current_user.get("role", "user")),
+        "tokens": int(current_user.get("tokens", 0) or 0),
+        "organization_name": current_user.get("organization_name", "") or "",
+        "created_by": creator_info,
+    }
