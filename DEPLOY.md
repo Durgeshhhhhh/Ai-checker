@@ -1,46 +1,98 @@
-# Deployment Guide (EC2 + Nginx + FastAPI)
+# Deployment Guide (AWS EC2 + FastAPI + Nginx)
 
-create the AWS A/C after that create the instance with the required and avaiable resources 
+This is a simple step-by-step guide to deploy the Ai-checker project on an AWS EC2 Ubuntu server.
 
-### (1) After creating the intances fallow the required command 
-At the time of creating the instance create the security group 
-1) 80 - TCP - 0.0.0.0/0 - launch-wizard-3 
-2) (0 - 65535)- TCP - 0.0.0.0/0 - launch-wizard-3 
-3) 443 - TCP - 0.0.0.0/0 - launch-wizard-3 
-4) 22 - TCP - 103.59.75.109/32 - launch-wizard-3  
+---
 
-#### step 1 -: connect the instance 
+## 1️ Create AWS Account & Launch EC2
 
-#### step 2 -: update the ubuntu and install the dependency 
+1. Create an AWS account.
+2. Launch a new EC2 instance:
+   - OS: Ubuntu 
+   - Instance type: t3.small(or higher if needed)
+   - Create/select a key pair
 
+### Security Group Settings
 
+While creating the instance, add these inbound rules:
+
+- HTTP – TCP – Port 80 – 0.0.0.0/0  
+- HTTPS – TCP – Port 443 – 0.0.0.0/0  
+- Custom TCP – Port 0-65535 – 0.0.0.0/0  
+- SSH – TCP – Port 22 – Your IP only 
+
+---
+
+# Backend Setup (FastAPI)
+
+---
+
+## 2️ Connect to EC2
+
+```bash
+ssh -i your-key.pem ubuntu@YOUR_EC2_PUBLIC_IP
+```
+
+---
+
+## 3️ Update Server & Install Required Packages
+
+```bash
 sudo apt update && sudo apt upgrade -y
 sudo apt install python3-pip python3-venv git nginx -y
+```
 
-#### step 3 -:  STEP 3 — Clone the Project from github 
+---
 
+## 4️ Clone the Project 
+
+```bash
 git clone https://github.com/Durgeshhhhhh/Ai-checker/
 cd Ai-checker
+```
 
-#### step 4-: create the virtual enviornment 
+---
 
+## 5️ Create Virtual Environment
+
+```bash
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 pip install gunicorn uvicorn
+```
 
-#### step 5-: create .env file in the EC2 server
+---
 
-sudo nano .env 
+## 6️ Create .env File
 
-#### step 6-:  Setup Gunicorn (Production Server)
+```bash
+sudo nano .env
+```
 
+Add your environment variables and save the file.
+
+---
+
+## 7️ Test the App with Gunicorn
+
+```bash
 gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app --bind 0.0.0.0:8000
+```
 
-#### step 7-: STEP 8 — Create Systemd Service (Auto Start)
+If it works, press `CTRL + C` to stop it.
 
-sudo nano /etc/systemd/system/ai-detector.service 
-                                                                       
+---
+
+## 8️ Create Systemd Service (Auto Start)
+
+```bash
+sudo nano /etc/systemd/system/ai-detector.service
+```
+
+Paste this:
+
+```
 [Unit]
 Description=AI Detector FastAPI App
 After=network.target
@@ -53,18 +105,37 @@ Restart=always
 
 [Install]
 WantedBy=multi-user.target
+```
 
-#### after creating the file run this command -:
+Then run:
+
+```bash
 sudo systemctl daemon-reload
-sudo systemctl start Ai-checker
-sudo systemctl enable Ai-checker
+sudo systemctl start ai-detector
+sudo systemctl enable ai-detector
+```
 
-#### If want to check the status then run -: 
+To check status:
+
+```bash
 sudo systemctl status ai-detector
- 
+```
 
-#### step 8-: sudo nano /etc/nginx/sites-available/Ai-checker 
+---
 
+# Nginx Configuration
+
+---
+
+## 9️ Configure Nginx
+
+```bash
+sudo nano /etc/nginx/sites-available/Ai-checker
+```
+
+Paste this:
+
+```
 server {
     listen 80;
     server_name YOUR_EC2_PUBLIC_IP;
@@ -76,7 +147,97 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 }
+```
 
-#### step 9-: start the server 
-sudo systemctl restart Ai-checker
+Enable and restart Nginx:-
+
+```bash
+sudo ln -s /etc/nginx/sites-available/Ai-checker /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+---
+
+# Frontend Setup (Production)
+
+---
+
+##  Build Frontend
+
+Install npm if needed:
+
+```bash
+sudo apt install npm -y
+```
+
+Then build:
+
+```bash
+npm run build
+```
+
+This will create a `dist/` folder.
+
+---
+
+## 1️1️ Move dist Folder to Nginx
+
+```bash
+sudo rm -rf /var/www/aichecker
+sudo mkdir -p /var/www/aichecker
+sudo cp -r ~/Ai-checker/dist/* /var/www/aichecker/
+sudo chown -R www-data:www-data /var/www/aichecker
+sudo chmod -R 755 /var/www/aichecker
+```
+
+---
+
+## 1️2️ Update Default Nginx File
+
+```bash
+sudo nano /etc/nginx/sites-available/default
+```
+
+Replace with:
+
+```
+server {
+    listen 80;
+    server_name YOUR_EC2_PUBLIC_IP;
+
+    root /var/www/aichecker;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+Restart Nginx:
+
+```bash
+sudo systemctl restart nginx
+```
+
+---
+
+# Done 
+
+To access  visit:
+
+```
+http://YOUR_EC2_PUBLIC_IP
+```
+
+Your backend and frontend should both be working.
+
+---
 
