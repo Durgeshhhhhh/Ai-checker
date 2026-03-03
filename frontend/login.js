@@ -1,5 +1,5 @@
 const APP_CONFIG = window.APP_CONFIG || {};
-const API_BASE = APP_CONFIG.API_BASE || "";
+const API_BASE = APP_CONFIG.API_BASE || "/api";
 
 if (APP_CONFIG.IS_API_PLACEHOLDER || !APP_CONFIG.API_BASE) {
   console.warn("Set your Render backend URL in frontend/config.js before production deploy.");
@@ -50,22 +50,75 @@ function closeRequestModal() {
   requestModal.setAttribute("aria-hidden", "true");
 }
 
+// async function performLogin() {
+//   const email = document.getElementById("email").value.trim();
+//   const password = document.getElementById("password").value;
+//   const error = document.getElementById("error");
+
+//   error.innerText = "";
+
+//   if (!email || !password) {
+//     error.innerText = "Enter email and password.";
+//     return;
+//   }
+
+//   if (!API_BASE) {
+//     error.innerText = "Backend URL is not configured. Set it in frontend/config.js";
+//     return;
+//   }
+
+//   try {
+//     const res = await fetch(`${API_BASE}/auth/login`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ email, password })
+//     });
+
+//     const data = await res.json();
+//     console.log("Login response:", data);
+//     if (!res.ok) {
+//       error.innerText = data.detail || "Login failed";
+//       return;
+//     }
+
+//     localStorage.setItem("access_token", data.access_token);
+//     localStorage.setItem("user", JSON.stringify(data.user));
+
+//     if (data.user.role === "admin" || data.user.role === "super_admin") {
+//       window.location.href = "admin.html";
+//     } else {
+//       window.location.href = "prediction.html";
+//     }
+//   } catch (err) {
+//     error.innerText = "Server not reachable";
+//   }
+// }
+
 async function performLogin() {
+  console.log("🔐 performLogin triggered");
+
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
   const error = document.getElementById("error");
 
+  console.log("📧 Email entered:", email);
+  console.log("🔑 Password length:", password ? password.length : 0);
+
   error.innerText = "";
 
   if (!email || !password) {
+    console.warn("⚠️ Missing email or password");
     error.innerText = "Enter email and password.";
     return;
   }
 
   if (!API_BASE) {
+    console.error("❌ API_BASE is not configured");
     error.innerText = "Backend URL is not configured. Set it in frontend/config.js";
     return;
   }
+
+  console.log("🌐 Sending login request to:", `${API_BASE}/auth/login`);
 
   try {
     const res = await fetch(`${API_BASE}/auth/login`, {
@@ -74,25 +127,37 @@ async function performLogin() {
       body: JSON.stringify({ email, password })
     });
 
+    console.log("📡 Response status:", res.status);
+
     const data = await res.json();
+    console.log("📦 Login response data:", data);
+
     if (!res.ok) {
+      console.warn("❌ Login failed:", data.detail);
       error.innerText = data.detail || "Login failed";
       return;
     }
 
+    console.log("✅ Login successful. Storing tokens...");
+
     localStorage.setItem("access_token", data.access_token);
     localStorage.setItem("user", JSON.stringify(data.user));
 
+    console.log("👤 User role:", data.user.role);
+
     if (data.user.role === "admin" || data.user.role === "super_admin") {
+      console.log("➡️ Redirecting to admin.html");
       window.location.href = "admin.html";
     } else {
+      console.log("➡️ Redirecting to prediction.html");
       window.location.href = "prediction.html";
     }
+
   } catch (err) {
+    console.error("🚨 Login error:", err);
     error.innerText = "Server not reachable";
   }
 }
-
 async function submitAdminRequest() {
   const emailInput = document.getElementById("reqEmail");
   const passwordInput = document.getElementById("reqPassword");
@@ -172,4 +237,5 @@ document.getElementById("password").addEventListener("keydown", (event) => {
     performLogin();
   }
 });
+
 

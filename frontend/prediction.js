@@ -1,5 +1,5 @@
-﻿const APP_CONFIG = window.APP_CONFIG || {};
-const API_BASE = APP_CONFIG.API_BASE || "";
+const APP_CONFIG = window.APP_CONFIG || {};
+const API_BASE = APP_CONFIG.API_BASE || "/api";
 
 if (APP_CONFIG.IS_API_PLACEHOLDER || !APP_CONFIG.API_BASE) {
     console.warn("Set your Render backend URL in frontend/config.js before production deploy.");
@@ -891,3 +891,4 @@ if (fileInputEl) {
 }
 
 loadHistory();
+

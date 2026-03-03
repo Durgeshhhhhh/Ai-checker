@@ -1,12 +1,17 @@
 const APP_CONFIG = window.APP_CONFIG || {};
-const API_BASE = APP_CONFIG.API_BASE || "";
+const API_BASE = APP_CONFIG.API_BASE || "/api";
 
 if (APP_CONFIG.IS_API_PLACEHOLDER || !APP_CONFIG.API_BASE) {
   console.warn("Set your Render backend URL in frontend/config.js before production deploy.");
 }
 
 const token = localStorage.getItem("access_token");
-const user = JSON.parse(localStorage.getItem("user") || "null");
+let user = null;
+try {
+  user = JSON.parse(localStorage.getItem("user") || "null");
+} catch (_err) {
+  user = null;
+}
 const isSuperAdmin = !!(user && user.role === "super_admin");
 const isAdminPanelRole = !!(user && (user.role === "admin" || user.role === "super_admin"));
 
@@ -78,6 +83,15 @@ window.logout = function() {
   localStorage.removeItem("user");
   window.location.href = "index.html";
 };
+
+function forceReauth(message) {
+  if (message) {
+    alert(message);
+  }
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("user");
+  window.location.href = "login.html";
+}
 
 function escapeHtml(value) {
   return String(value)
@@ -204,6 +218,10 @@ async function loadAllocationSummary() {
   const data = await res.json();
 
   if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      forceReauth("Session expired or account has no admin access. Please login again.");
+      return;
+    }
     allocationSummary.innerHTML = `<p>${escapeHtml(data.detail || "Unable to load summary")}</p>`;
     return;
   }
@@ -356,8 +374,8 @@ async function loadUsers() {
   const users = await res.json();
 
   if (!res.ok) {
-    if (res.status === 401) {
-      window.logout();
+    if (res.status === 401 || res.status === 403) {
+      forceReauth("Session expired or account has no admin access. Please login again.");
       return;
     }
     alert((users && users.detail) || "Unable to load users");
@@ -677,7 +695,44 @@ if (saveEditUserBtn) {
   saveEditUserBtn.addEventListener("click", saveUserDetails);
 }
 
-setupRoleUi();
-loadAllocationSummary();
-loadAdminRequests();
-loadUsers();
+async function bootstrapAdminPage() {
+  if (!API_BASE) {
+    alert("Backend URL is not configured. Set it in frontend/config.js");
+    return;
+  }
+
+  const res = await fetch(`${API_BASE}/admin/me-summary`, {
+    headers: { "Authorization": "Bearer " + token }
+  });
+  const data = await res.json();
+
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      forceReauth(data.detail || "Admin access required");
+      return;
+    }
+    alert(data.detail || "Unable to verify admin session");
+    return;
+  }
+
+  const serverRole = data.role;
+  if (serverRole !== "admin" && serverRole !== "super_admin") {
+    forceReauth("Your account does not have admin access.");
+    return;
+  }
+
+  user = {
+    ...(user || {}),
+    email: data.email || (user && user.email) || "",
+    role: serverRole,
+  };
+  localStorage.setItem("user", JSON.stringify(user));
+
+  setupRoleUi();
+  await loadAllocationSummary();
+  await loadAdminRequests();
+  await loadUsers();
+}
+
+bootstrapAdminPage();
+
